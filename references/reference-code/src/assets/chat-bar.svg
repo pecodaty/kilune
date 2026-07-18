@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 26" width="390" height="26">
+  <defs>
+    <linearGradient id="chat-bg" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%"   stop-color="#070315" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#07030f" stop-opacity="0.45"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="390" height="26" fill="url(#chat-bg)"/>
+
+  <!-- Top border -->
+  <line x1="0" y1="0.5" x2="390" y2="0.5" stroke="#2a1845" stroke-width="0.8" opacity="0.5"/>
+  <!-- Bottom border -->
+  <line x1="0" y1="25.5" x2="390" y2="25.5" stroke="#1a1030" stroke-width="0.8" opacity="0.5"/>
+
+  <!-- Chat bubble icon -->
+  <g transform="translate(12,5)">
+    <circle cx="8" cy="8" r="6.5" fill="none" stroke="#6050a0" stroke-width="1"/>
+    <path d="M5 10 Q8 14 11 10" fill="none" stroke="#6050a0" stroke-width="0.8"/>
+    <circle cx="6"  cy="8" r="0.8" fill="#6050a0"/>
+    <circle cx="8"  cy="8" r="0.8" fill="#6050a0"/>
+    <circle cx="10" cy="8" r="0.8" fill="#6050a0"/>
+  </g>
+
+  <!-- "[World]" label (gold) -->
+  <text x="28" y="17" font-family="sans-serif" font-weight="700" font-size="9.5" fill="#d4a017">[World]</text>
+
+  <!-- Chat message text -->
+  <text x="74" y="17" font-family="sans-serif" font-size="9.5" fill="#6050a0">SilverArrow: Forest Path 2 is wild tonight 🔥</text>
+
+  <!-- "Chat ▸" button -->
+  <text x="375" y="17" text-anchor="end" font-family="sans-serif" font-weight="700" font-size="8.5" fill="#d4a017" letter-spacing="0.04em">Chat ▸</text>
+
+</svg>

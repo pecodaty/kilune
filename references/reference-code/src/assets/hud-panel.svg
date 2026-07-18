@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 74" width="390" height="74">
+  <defs>
+    <!-- Panel background -->
+    <linearGradient id="hud-bg" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#0e0a28" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#080418" stop-opacity="1"/>
+    </linearGradient>
+    <!-- Bottom border gradient -->
+    <linearGradient id="hud-line" x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox">
+      <stop offset="0%"   stop-color="#3d2060" stop-opacity="0.15"/>
+      <stop offset="30%"  stop-color="#d4a017" stop-opacity="0.6"/>
+      <stop offset="70%"  stop-color="#d4a017" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#3d2060" stop-opacity="0.15"/>
+    </linearGradient>
+    <!-- Avatar ring gradient -->
+    <linearGradient id="av-ring" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%"   stop-color="#ffe066"/>
+      <stop offset="50%"  stop-color="#8b6200"/>
+      <stop offset="100%" stop-color="#ffd700"/>
+    </linearGradient>
+    <!-- Level badge bg -->
+    <linearGradient id="lv-bg" x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox">
+      <stop offset="0%"   stop-color="#0d0520"/>
+      <stop offset="50%"  stop-color="#1e1040"/>
+      <stop offset="100%" stop-color="#0d0520"/>
+    </linearGradient>
+    <!-- HP bar fill -->
+    <linearGradient id="hp-fill" x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox">
+      <stop offset="0%"   stop-color="#22dd6e" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#22dd6e"/>
+    </linearGradient>
+    <!-- MP bar fill -->
+    <linearGradient id="mp-fill" x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox">
+      <stop offset="0%"   stop-color="#448aff" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#448aff"/>
+    </linearGradient>
+    <!-- Timer badge bg -->
+    <linearGradient id="timer-bg" x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox">
+      <stop offset="0%"   stop-color="#0d0520" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#0d0520" stop-opacity="0.8"/>
+    </linearGradient>
+    <!-- Map button bg -->
+    <linearGradient id="map-bg" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%"   stop-color="#0d0520"/>
+      <stop offset="100%" stop-color="#0d0520"/>
+    </linearGradient>
+    <!-- Cap reward gradient -->
+    <linearGradient id="cap-gold" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%"   stop-color="#ffe066"/>
+      <stop offset="100%" stop-color="#8b6200"/>
+    </linearGradient>
+    <!-- Purple glow for avatar -->
+    <radialGradient id="av-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#7733ff" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#7733ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- ── Panel background ── -->
+  <rect width="390" height="74" fill="url(#hud-bg)"/>
+
+  <!-- Inner teal accent border -->
+  <rect x="4" y="4" width="382" height="66" fill="none" stroke="#00e5c8" stroke-width="0.5" opacity="0.15" rx="1"/>
+
+  <!-- Bottom gold line -->
+  <line x1="0" y1="73.5" x2="390" y2="73.5" stroke="url(#hud-line)" stroke-width="1"/>
+
+  <!-- Corner brackets — gold -->
+  <polyline points="0,18 0,1 18,1"    fill="none" stroke="#d4a017" stroke-width="1.2" opacity="0.6"/>
+  <polyline points="372,1 390,1 390,18"  fill="none" stroke="#d4a017" stroke-width="1.2" opacity="0.6"/>
+  <polyline points="0,56 0,73 18,73"   fill="none" stroke="#d4a017" stroke-width="1.2" opacity="0.6"/>
+  <polyline points="372,73 390,73 390,56" fill="none" stroke="#d4a017" stroke-width="1.2" opacity="0.6"/>
+
+  <!-- Corner dots -->
+  <circle cx="1"   cy="1"  r="2" fill="#d4a017" opacity="0.4"/>
+  <circle cx="389" cy="1"  r="2" fill="#d4a017" opacity="0.4"/>
+  <circle cx="1"   cy="73" r="2" fill="#d4a017" opacity="0.4"/>
+  <circle cx="389" cy="73" r="2" fill="#d4a017" opacity="0.4"/>
+
+  <!-- ── Avatar (x=8, y=4, 52×52) ── -->
+  <!-- Purple class glow ring (outer) -->
+  <polygon points="21,4 47,4 59,16 59,44 47,56 21,56 9,44 9,16"
+    fill="url(#av-glow)" stroke="none" opacity="0.6"/>
+  <!-- Purple stroke ring -->
+  <polygon points="21,4 47,4 59,16 59,44 47,56 21,56 9,44 9,16"
+    fill="none" stroke="#8844ff" stroke-width="3.5" opacity="0.28"/>
+  <!-- Avatar fill -->
+  <polygon points="21,4 47,4 59,16 59,44 47,56 21,56 9,44 9,16"
+    fill="#180d38" stroke="url(#av-ring)" stroke-width="1.5"/>
+  <!-- Sword icon (simplified) -->
+  <g transform="translate(22, 7)">
+    <rect x="16" y="4"  width="4" height="24" rx="1.5" fill="#c8a0e0" opacity="0.9"/>
+    <rect x="10" y="16" width="16" height="3"  rx="1"   fill="#d4a017" opacity="0.9"/>
+    <polygon points="18,1 20,8 16,8" fill="#e8d0f8"/>
+  </g>
+  <!-- Level badge -->
+  <polygon points="22,55 46,55 50,59 46,63 22,63 18,59" fill="url(#lv-bg)" stroke="#d4a017" stroke-width="0.7" stroke-opacity="0.6"/>
+  <text x="34" y="62" text-anchor="middle" font-family="serif" font-weight="700" font-size="7" fill="#ffd700">Lv.32</text>
+
+  <!-- ── Name + Timer ── -->
+  <!-- Name -->
+  <text x="68" y="22" font-family="serif" font-weight="700" font-size="15" fill="#ffd700"
+    style="letter-spacing:0.07em" filter="url(#name-glow)">FERO</text>
+
+  <!-- Timer badge -->
+  <polygon points="105,12 195,12 200,17 195,22 105,22 100,17" fill="#0d052099" stroke="#3d2060" stroke-width="0.7" stroke-opacity="0.5"/>
+  <text x="115" y="20" font-family="sans-serif" font-size="7.5" fill="#7060a0">Elite · Farming</text>
+  <text x="176" y="20" font-family="sans-serif" font-weight="700" font-size="8" fill="#ffd700">01:14</text>
+
+  <!-- ── HP Bar ── -->
+  <text x="68" y="34" font-family="sans-serif" font-weight="700" font-size="8" fill="#22dd6e">HP</text>
+  <!-- Track -->
+  <polygon points="82,27 234,27 239,32 234,34 82,34 77,32" fill="#06020f" stroke="#2a1845" stroke-width="0.8"/>
+  <!-- Fill (69/158 = 43.7%) -->
+  <polygon points="82,27 148,27 153,32 148,34 82,34 77,32" fill="url(#hp-fill)"/>
+  <rect x="149" y="29" width="3" height="3" transform="rotate(45 150.5 30.5)" fill="#22dd6e" opacity="0.8"/>
+  <!-- Value -->
+  <text x="244" y="34" font-family="sans-serif" font-size="8" fill="#a090c0" text-anchor="end">69/158</text>
+
+  <!-- ── MP Bar ── -->
+  <text x="68" y="47" font-family="sans-serif" font-weight="700" font-size="8" fill="#448aff">MP</text>
+  <!-- Track -->
+  <polygon points="82,40 234,40 239,45 234,47 82,47 77,45" fill="#06020f" stroke="#2a1845" stroke-width="0.8"/>
+  <!-- Fill (48/80 = 60%) -->
+  <polygon points="82,40 173,40 178,45 173,47 82,47 77,45" fill="url(#mp-fill)"/>
+  <rect x="174" y="42" width="3" height="3" transform="rotate(45 175.5 43.5)" fill="#448aff" opacity="0.8"/>
+  <!-- Value -->
+  <text x="244" y="47" font-family="sans-serif" font-size="8" fill="#a090c0" text-anchor="end">48/80</text>
+
+  <!-- ── Map Button (x=248, y=4, 48×22) ── -->
+  <rect x="248" y="6" width="46" height="20" rx="2" fill="#0d0520" stroke="#3d2060" stroke-width="0.8" stroke-opacity="0.6"/>
+  <line x1="249" y1="7" x2="254" y2="12" stroke="#d4a017" stroke-width="0.8" opacity="0.45"/>
+  <line x1="293" y1="7" x2="288" y2="12" stroke="#d4a017" stroke-width="0.8" opacity="0.45"/>
+  <!-- Map pin icon (simplified) -->
+  <circle cx="263" cy="15" r="3.5" fill="none" stroke="#7060a0" stroke-width="1"/>
+  <circle cx="263" cy="15" r="1.2" fill="#7060a0"/>
+  <text x="272" y="19" font-family="sans-serif" font-weight="700" font-size="7.5" fill="#7060a0" letter-spacing="0.06em">MAP</text>
+
+  <!-- ── Cap Reward Button (x=248, y=32, 48×30) ── -->
+  <polygon points="256,32 286,32 293,38 293,58 286,64 256,64 249,58 249,38"
+    fill="#0d0520" stroke="url(#cap-gold)" stroke-width="1.2"/>
+  <!-- Gift icon box -->
+  <rect x="256" y="41" width="12" height="11" rx="1" fill="none" stroke="#ffd700" stroke-width="1"/>
+  <line x1="262" y1="38" x2="262" y2="41" stroke="#ffd700" stroke-width="1"/>
+  <path d="M258 38 Q262 35 262 38" fill="none" stroke="#ffd700" stroke-width="0.8"/>
+  <path d="M266 38 Q262 35 262 38" fill="none" stroke="#ffd700" stroke-width="0.8"/>
+  <text x="274" y="46" font-family="serif" font-weight="700" font-size="6" fill="#c8900a">Cap.</text>
+  <text x="274" y="56" font-family="serif" font-weight="700" font-size="6" fill="#ffd700">Reward</text>
+
+  <!-- ── Stage label (trapezoid below HUD, shown as separate layer) ── -->
+  <!-- Not included here — it is a child element, not part of the HUD panel itself -->
+
+</svg>
