@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/heroes/portrait_arch.gd" id="1"]
+
+[node name="PortraitArch" type="Control"]
+custom_minimum_size = Vector2(0, 220)
+script = ExtResource("1")

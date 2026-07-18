@@ -1,0 +1,11 @@
+# Godot 4+ specific ignores
+.godot/
+/android/build/
+
+# Tooling
+.venv/
+tools/
+
+# OS
+.DS_Store
+Thumbs.db

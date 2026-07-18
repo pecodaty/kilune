@@ -1,0 +1,554 @@
+# Sprite Registration Standards
+
+Version: 1.0
+
+This document defines how every sprite should be generated, imported, aligned and registered inside the Shroomer project.
+
+It ensures that all characters, monsters, pets, NPCs and effects behave consistently during gameplay regardless of when or how they were created.
+
+---
+
+# Philosophy
+
+Every sprite must be:
+
+- Modular
+- Consistent
+- Easily replaceable
+- Animation-friendly
+- Compatible with Spine 2D (future)
+- Compatible with Godot AnimatedSprite2D
+
+The game code should never compensate for inconsistent artwork.
+
+Artwork should conform to the standards.
+
+---
+
+# Canonical Sprite Size
+
+Character sprites should be generated at a consistent visual scale.
+
+The artwork may vary slightly between classes, but the perceived in-game size should remain identical.
+
+Heroes
+
+≈100% reference scale
+
+Elite Monsters
+
+≈110–120%
+
+Bosses
+
+≈140–180%
+
+Pets
+
+≈45–60%
+
+NPCs
+
+≈90–100%
+
+---
+
+# Character Orientation
+
+Playable characters
+
+Always face RIGHT.
+
+Enemies
+
+Always face LEFT.
+
+Never generate mirrored artwork.
+
+Every sprite should be authored in its native facing direction.
+
+---
+
+# Camera Angle
+
+Every sprite uses the same camera angle.
+
+Front-facing three-quarter RPG perspective.
+
+Never:
+
+Top-down
+
+Side-view
+
+Isometric
+
+Perspective changes
+
+---
+
+# Pivot Point
+
+Every sprite must share the same pivot philosophy.
+
+Pivot location:
+
+Center of both feet.
+
+The pivot never changes between animations.
+
+Feet remain fixed.
+
+Only body parts move.
+
+---
+
+# Frame Alignment
+
+Every animation frame must:
+
+Maintain identical canvas size.
+
+Maintain identical pivot.
+
+Maintain identical scale.
+
+Maintain identical camera angle.
+
+The character should never appear to grow or shrink.
+
+---
+
+# Canvas Rules
+
+Every animation uses:
+
+Transparent background.
+
+No cropping.
+
+No clipped weapons.
+
+No clipped capes.
+
+No clipped spell effects.
+
+Leave sufficient transparent padding around the character.
+
+---
+
+# Scale Consistency
+
+Never manually resize frames individually.
+
+Every frame must preserve:
+
+Character proportions.
+
+Weapon proportions.
+
+Head size.
+
+Cape size.
+
+Armor size.
+
+Only animation should create movement.
+
+---
+
+# Idle Position
+
+The first frame defines the canonical idle pose.
+
+All other animations should naturally return to this exact pose.
+
+Idle is the reference for:
+
+Attack
+
+Cast
+
+Hit
+
+Death
+
+Victory
+
+Walk
+
+Every animation should begin and end in a compatible state whenever appropriate.
+
+---
+
+# Animation Center
+
+Characters remain perfectly centered.
+
+Never translate the entire body.
+
+Allowed movement:
+
+Arms
+
+Shoulders
+
+Hair
+
+Cape
+
+Weapon
+
+Small torso rotation
+
+Head
+
+Feet should remain planted unless the animation specifically requires movement.
+
+---
+
+# Weapons
+
+Weapons are independent visual elements but remain attached to the character.
+
+Rules
+
+Never clip.
+
+Never change hands.
+
+Never resize.
+
+Never distort perspective.
+
+Weapon motion should come from rotation rather than translation whenever possible.
+
+---
+
+# Sprite Sheets
+
+Canonical configuration:
+
+Model
+
+Pro
+
+Frames
+
+16
+
+Layout
+
+4 × 4
+
+Resolution
+
+512 × 512
+
+Background Remover
+
+Ultra
+
+Transparent PNG
+
+This configuration is the default for every sprite animation unless explicitly overridden.
+
+---
+
+# Animation Naming
+
+Use consistent naming.
+
+Examples
+
+hero_warrior_idle
+
+hero_warrior_attack
+
+hero_warrior_cast
+
+hero_warrior_hit
+
+hero_warrior_death
+
+monster_spirit_idle
+
+monster_spirit_attack
+
+monster_spirit_hit
+
+monster_spirit_death
+
+pet_fairy_idle
+
+effect_slash
+
+effect_fireball
+
+Avoid inconsistent naming.
+
+---
+
+# Registration Naming
+
+Every imported asset should follow:
+
+category_name_animation
+
+Examples
+
+hero_warrior_idle
+
+hero_mage_attack
+
+monster_fire_spirit_idle
+
+npc_shopkeeper_idle
+
+pet_crystal_fox_idle
+
+---
+
+# Import Settings
+
+Godot import recommendations:
+
+Filter
+
+Disabled
+
+Mipmaps
+
+Disabled
+
+Repeat
+
+Disabled
+
+Compression
+
+Lossless
+
+Background
+
+Transparent
+
+---
+
+# Animation Speed
+
+Recommended FPS
+
+Idle
+
+6–8 FPS
+
+Walk
+
+8–10 FPS
+
+Attack
+
+10–12 FPS
+
+Cast
+
+10–12 FPS
+
+Hit
+
+8 FPS
+
+Death
+
+8–10 FPS
+
+Effects
+
+12–16 FPS
+
+The objective is smooth readability rather than maximum frame count.
+
+---
+
+# Effect Registration
+
+Effects should be separated from characters.
+
+Examples
+
+Slash
+
+Explosion
+
+Projectile
+
+Impact
+
+Aura
+
+Glow
+
+Buff
+
+Debuff
+
+Never bake effects permanently into character sprites.
+
+---
+
+# Layer Order
+
+Characters should be separable into visual layers.
+
+Preferred order:
+
+Shadow
+
+Feet
+
+Body
+
+Weapon
+
+Cape
+
+Hair
+
+Magic Effects
+
+UI
+
+This simplifies future Spine integration.
+
+---
+
+# Shadow
+
+Characters should not include baked ground shadows.
+
+Ground shadows are generated by the game.
+
+Only ambient self-shadowing is allowed.
+
+---
+
+# Future Spine Compatibility
+
+Sprites should be designed so they can eventually be recreated using Spine.
+
+Avoid:
+
+Perspective tricks.
+
+Extreme squash/stretch.
+
+Distorted anatomy.
+
+Favor clean overlapping shapes.
+
+---
+
+# AutoSprite Standards
+
+Whenever generating sprite sheets through AutoSprite MCP:
+
+Model
+
+Pro
+
+Token Cost
+
+10 credits per generated image
+
+Frames
+
+16
+
+Grid
+
+4 × 4
+
+Resolution
+
+512 × 512
+
+Background Remover
+
+Ultra
+
+Transparent PNG
+
+---
+
+# Cost Confirmation
+
+Before generating any image through AutoSprite MCP, Codex must:
+
+1. Count the number of images that will be generated.
+
+2. Calculate the total credit cost.
+
+Formula:
+
+Total Cost = Number of Images × 10 Credits
+
+3. Present the calculation to the user.
+
+Example
+
+Creating:
+
+- Idle
+- Attack
+- Hit
+
+Total:
+
+3 images × 10 Credits = 30 Credits
+
+Wait for user confirmation before invoking the MCP.
+
+---
+
+# Quality Checklist
+
+Before considering an asset complete, verify:
+
+✓ Correct facing direction
+
+✓ Transparent background
+
+✓ 16 frames
+
+✓ 4×4 layout
+
+✓ 512×512 resolution
+
+✓ Ultra background removal
+
+✓ Same canvas size
+
+✓ Same pivot
+
+✓ Same scale
+
+✓ No clipping
+
+✓ Consistent proportions
+
+✓ Readable silhouette
+
+✓ Compatible with existing heroes
+
+✓ Matches Shroomer visual language
+
+---
+
+# Golden Rule
+
+A newly generated sprite should be visually indistinguishable from the original Shroomer assets.
+
+Players should never be able to identify which assets were generated at different times or by different prompts.
+
+Consistency always takes priority over adding additional detail.
