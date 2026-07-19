@@ -4,6 +4,12 @@ import {
   Lock, Gift, Map, Star, ChevronRight, ChevronUp, ChevronDown, X,
   Zap, BookOpen, PawPrint
 } from "lucide-react";
+import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
+import supplyShopImg   from "@/imports/SupplyShop.png";
+import limitedShopImg  from "@/imports/LimitedTimeShop.png";
+import outfitShopImg   from "@/imports/OutfitShop.png";
+import bundleShopImg   from "@/imports/BundleShop.png";
+import petGachaImg     from "@/imports/PetGachaShop.png";
 
 // ─── RUNE ICONS ───────────────────────────────────────────────────────────────
 const FireRune = () => (
@@ -1566,6 +1572,399 @@ function GuildScreen({ onBack }: { onBack: () => void }) {
   );
 }
 
+// ─── SHOP DATA ────────────────────────────────────────────────────────────────
+type ShopTab = "supply" | "limited" | "outfit" | "bundle" | "gacha";
+
+const SUPPLY_ITEMS = [
+  { id:"s1", diamonds:200,   price:"$0.99",  badge:null,          icon:"💎" },
+  { id:"s2", diamonds:1050,  price:"$4.99",  badge:"BEST VALUE",  icon:"💎" },
+  { id:"s3", diamonds:2200,  price:"$9.99",  badge:"POPULAR",     icon:"💎" },
+  { id:"s4", diamonds:4600,  price:"$19.99", badge:null,          icon:"💎" },
+  { id:"s5", diamonds:12000, price:"$49.99", badge:null,          icon:"💎" },
+  { id:"s6", diamonds:25000, price:"$99.99", badge:"MOST VALUE",  icon:"💎" },
+] as const;
+
+const LIMITED_ITEMS = [
+  { id:"l1", name:"Free Pack",         icon:"🎁", price:null,    priceLabel:"Free",   tag:"0/1",  accent:"#22dd6e" },
+  { id:"l2", name:"Dungeon Pack Kit",  icon:"🗝️", price:"$0.99", priceLabel:"$0.99",  tag:"SALE", accent:"#ff9922" },
+  { id:"l3", name:"Magic Lamp Pack",   icon:"🪔", price:"$4.99", priceLabel:"$4.99",  tag:"HOT",  accent:"#ff4488" },
+  { id:"l4", name:"Train Ticket Pack", icon:"🎫", price:"$0.99", priceLabel:"$0.99",  tag:"NEW",  accent:"#448aff" },
+] as const;
+
+const OUTFIT_ITEMS = [
+  { id:"o1", name:"Default",       icon:"🧝", color:"#6050a0" },
+  { id:"o2", name:"Fire Knight",   icon:"🔥", color:"#ff4422" },
+  { id:"o3", name:"Ocean Mage",    icon:"🌊", color:"#448aff" },
+  { id:"o4", name:"Forest Druid",  icon:"🌿", color:"#22dd6e" },
+  { id:"o5", name:"Shadow Rogue",  icon:"🌑", color:"#7744cc" },
+  { id:"o6", name:"Gold Paladin",  icon:"⚔️", color:"#ffd700" },
+  { id:"o7", name:"Storm Caller",  icon:"⚡", color:"#00e5c8" },
+  { id:"o8", name:"Void Walker",   icon:"💀", color:"#aa22ff" },
+] as const;
+
+const BUNDLE_ITEMS = [
+  { id:"b1", name:"Pal Pack",   sub:"003/11", icon:"🐾", price:"$99.99", color:"#aa44ff", tag:"Limited" },
+  { id:"b2", name:"Skill Pack", sub:"001/05", icon:"⭐", price:"$99.99", color:"#ffd700", tag:"Hot" },
+  { id:"b3", name:"Pal Pack",   sub:"010/11", icon:"🐾", price:"$99.99", color:"#ff4422", tag:"New" },
+] as const;
+
+// ─── SHOP HEADER ──────────────────────────────────────────────────────────────
+function ShopHeader({ title, onBack }: { title: string; onBack: () => void }) {
+  return (
+    <div className="relative flex items-center px-3 flex-shrink-0" style={{ height: 58 }}>
+      <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 390 58" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="shophdr-bg" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#1a0c04"/><stop offset="100%" stopColor="#100808"/>
+          </linearGradient>
+          <linearGradient id="shophdr-line" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="transparent"/><stop offset="40%" stopColor="#d4a017cc"/><stop offset="60%" stopColor="#d4a017cc"/><stop offset="100%" stopColor="transparent"/>
+          </linearGradient>
+        </defs>
+        <rect width="390" height="58" fill="url(#shophdr-bg)"/>
+        <line x1="0" y1="57.5" x2="390" y2="57.5" stroke="url(#shophdr-line)" strokeWidth="1"/>
+        <polyline points="0,12 0,1 12,1" stroke="#d4a017" strokeWidth="1.2" fill="none" opacity="0.6"/>
+        <polyline points="378,1 390,1 390,12" stroke="#d4a017" strokeWidth="1.2" fill="none" opacity="0.6"/>
+        <polyline points="0,46 0,57 12,57" stroke="#d4a017" strokeWidth="1.2" fill="none" opacity="0.6"/>
+        <polyline points="378,57 390,57 390,46" stroke="#d4a017" strokeWidth="1.2" fill="none" opacity="0.6"/>
+      </svg>
+      <span style={{ fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:16, color:"#ffd700", letterSpacing:"0.07em", textShadow:"0 0 12px #ffd70033", flex:1, position:"relative" }}>{title}</span>
+      <div className="relative flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-1 px-2" style={{ height:22, background:"#1a0c04", border:"1px solid #d4a01744", clipPath:"polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)" }}>
+          <span style={{ fontSize:9, color:"#ffd700", fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>💎 26,791</span>
+        </div>
+        <div className="flex items-center gap-1 px-2" style={{ height:22, background:"#1a0c04", border:"1px solid #d4a01744", clipPath:"polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)" }}>
+          <span style={{ fontSize:9, color:"#ff9922", fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>🪙 11,734</span>
+        </div>
+        <button onClick={onBack} className="flex items-center justify-center px-3" style={{ height:22, background:"#1a0c04", border:"1px solid #5a400066", clipPath:"polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%)" }}>
+          <span style={{ fontSize:8.5, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:"#8a6040", letterSpacing:"0.05em" }}>Back</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── SHOP TAB BAR ─────────────────────────────────────────────────────────────
+function ShopTabBar({ active, setActive }: { active: ShopTab; setActive: (t: ShopTab) => void }) {
+  const tabs: { id: ShopTab; label: string; icon: string }[] = [
+    { id:"supply",  label:"Supply",  icon:"💎" },
+    { id:"limited", label:"Limited", icon:"⏰" },
+    { id:"outfit",  label:"Outfit",  icon:"👗" },
+    { id:"bundle",  label:"Bundle",  icon:"📦" },
+    { id:"gacha",   label:"Gacha",   icon:"🎰" },
+  ];
+  return (
+    <div className="relative flex flex-shrink-0" style={{ height:46, background:"#0e0804", borderBottom:"1px solid #3a220011" }}>
+      {/* Active indicator top line */}
+      {tabs.map((t,i) => active===t.id && (
+        <div key={t.id} style={{ position:"absolute", top:0, left:`${i*20}%`, width:"20%", height:2, background:"linear-gradient(90deg,transparent,#ffd700,transparent)" }}/>
+      ))}
+      {tabs.map(t => (
+        <button key={t.id} onClick={() => setActive(t.id)} className="flex-1 flex flex-col items-center justify-center gap-0.5">
+          <span style={{ fontSize:14, filter:active===t.id?"drop-shadow(0 0 4px #ffd70066)":undefined, opacity:active===t.id?1:0.4 }}>{t.icon}</span>
+          <span style={{ fontSize:7.5, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:active===t.id?"#ffd700":"#5a4020", letterSpacing:"0.06em", textTransform:"uppercase" }}>{t.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ─── SUPPLY SHOP ──────────────────────────────────────────────────────────────
+function SupplyShopContent() {
+  return (
+    <div className="flex-1 flex flex-col" style={{ background:"linear-gradient(180deg,#180c04 0%,#0e0804 100%)" }}>
+      {/* Preview strip */}
+      <div className="relative flex-shrink-0" style={{ height:120, overflow:"hidden" }}>
+        <ImageWithFallback src={supplyShopImg} alt="Supply Store" className="absolute inset-0 w-full h-full object-cover object-top" style={{ opacity:0.35 }}/>
+        <div className="absolute inset-0" style={{ background:"linear-gradient(180deg,transparent 40%,#180c04 100%)" }}/>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+          <span style={{ fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:20, color:"#ffd700", textShadow:"0 2px 18px #ffd70066, 0 0 40px #ff990044" }}>Supply Store</span>
+          <span style={{ fontSize:9, color:"#d4a017aa", fontFamily:"'Rajdhani',sans-serif", fontWeight:600, letterSpacing:"0.1em" }}>DIAMOND PACKAGES</span>
+        </div>
+      </div>
+      {/* Items grid */}
+      <div className="flex-1 overflow-y-auto px-3 pb-3" style={{ scrollbarWidth:"none" }}>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+          {SUPPLY_ITEMS.map(item => (
+            <div key={item.id} className="relative flex flex-col items-center gap-1.5 py-3 px-2" style={{ background:"linear-gradient(160deg,#1e1004 0%,#140c04 100%)", border:"1px solid #d4a01733", clipPath:"polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%)" }}>
+              {/* Shimmer top */}
+              <div style={{ position:"absolute", top:0, left:10, right:10, height:1, background:"linear-gradient(90deg,transparent,#ffd70055,transparent)" }}/>
+              {/* Badge */}
+              {item.badge && (
+                <div style={{ position:"absolute", top:-1, right:-1, padding:"2px 7px", background:item.badge==="BEST VALUE"?"#ff7700":item.badge==="MOST VALUE"?"#aa22ff":"#1a6644", clipPath:"polygon(0 0,100% 0,calc(100% - 4px) 100%,4px 100%)" }}>
+                  <span style={{ fontSize:6.5, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:"#fff", letterSpacing:"0.06em" }}>{item.badge}</span>
+                </div>
+              )}
+              {/* Gem icon */}
+              <div className="relative flex items-center justify-center" style={{ width:52, height:52 }}>
+                <svg viewBox="0 0 52 52" className="absolute inset-0 w-full h-full">
+                  <polygon points="13,1 39,1 51,13 51,39 39,51 13,51 1,39 1,13" fill="#1a0e04" stroke="#d4a017" strokeWidth="0.8" opacity="0.55"/>
+                  <ellipse cx="26" cy="26" rx="16" ry="16" fill="#ff990011"/>
+                </svg>
+                <span style={{ position:"relative", fontSize:24, filter:"drop-shadow(0 0 8px #aaccff77)" }}>{item.icon}</span>
+              </div>
+              {/* Diamond count */}
+              <span style={{ fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:17, color:"#c8e8ff", lineHeight:1 }}>{item.diamonds.toLocaleString()}</span>
+              {/* Price button */}
+              <button className="w-full flex items-center justify-center" style={{ height:30, marginTop:2, background:"linear-gradient(90deg,#7a3a00,#cc6600,#7a3a00)", border:"1px solid #ff990055", clipPath:"polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%)", filter:"drop-shadow(0 0 5px #ff660022)" }}>
+                <span style={{ fontSize:11, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:"#ffe088", letterSpacing:"0.04em" }}>{item.price}</span>
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── LIMITED TIME SHOP ────────────────────────────────────────────────────────
+function LimitedShopContent() {
+  const [secs, setSecs] = useState(4835);
+  useEffect(() => {
+    const t = setInterval(() => setSecs(s => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const hh = String(Math.floor(secs/3600)).padStart(2,"0");
+  const mm = String(Math.floor((secs%3600)/60)).padStart(2,"0");
+  const ss = String(secs%60).padStart(2,"0");
+  return (
+    <div className="flex-1 flex flex-col" style={{ background:"linear-gradient(180deg,#180a04 0%,#0e0804 100%)" }}>
+      {/* Banner */}
+      <div className="relative flex-shrink-0 flex flex-col items-center justify-center gap-1" style={{ height:90, overflow:"hidden" }}>
+        <ImageWithFallback src={limitedShopImg} alt="Limited Time Shop" className="absolute inset-0 w-full h-full object-cover object-top" style={{ opacity:0.3 }}/>
+        <div className="absolute inset-0" style={{ background:"linear-gradient(180deg,transparent 20%,#180a04 100%)" }}/>
+        <span style={{ fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:16, color:"#ff9944", textShadow:"0 0 12px #ff660044", position:"relative" }}>Limited-Time Shop</span>
+        {/* Countdown */}
+        <div className="relative flex items-center gap-1 px-3" style={{ height:24, background:"#ff440018", border:"1px solid #ff440033", clipPath:"polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%)" }}>
+          <span style={{ fontSize:9, color:"#ff9966", fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>⏰ Resets in</span>
+          {[hh,mm,ss].map((v,i) => (
+            <span key={i} style={{ display:"flex", alignItems:"center", gap:2 }}>
+              <span style={{ fontSize:11, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:"#ffcc88", minWidth:16, textAlign:"center" }}>{v}</span>
+              {i<2 && <span style={{ fontSize:9, color:"#ff7744" }}>:</span>}
+            </span>
+          ))}
+        </div>
+      </div>
+      {/* Daily deals label */}
+      <div className="flex items-center gap-2 px-3 mb-2 flex-shrink-0">
+        <div style={{ flex:1, height:1, background:"linear-gradient(90deg,transparent,#d4a01744)" }}/>
+        <span style={{ fontSize:9, fontFamily:"'Cinzel',serif", fontWeight:700, color:"#d4a017", letterSpacing:"0.1em" }}>DAILY DEALS</span>
+        <div style={{ flex:1, height:1, background:"linear-gradient(90deg,#d4a01744,transparent)" }}/>
+      </div>
+      {/* Items grid */}
+      <div className="flex-1 overflow-y-auto px-3 pb-3" style={{ scrollbarWidth:"none" }}>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+          {LIMITED_ITEMS.map(item => (
+            <div key={item.id} className="relative flex flex-col items-center gap-2 py-3 px-2" style={{ background:"linear-gradient(160deg,#1a0c04 0%,#100804 100%)", border:`1px solid ${item.accent}33`, clipPath:"polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%)" }}>
+              <div style={{ position:"absolute", top:0, left:8, right:8, height:1, background:`linear-gradient(90deg,transparent,${item.accent}66,transparent)` }}/>
+              {/* Tag */}
+              <div style={{ position:"absolute", top:-1, left:-1, padding:"2px 8px", background:item.accent, clipPath:"polygon(0 0,100% 0,calc(100% - 4px) 100%,0 100%)" }}>
+                <span style={{ fontSize:6.5, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:"#fff" }}>{item.tag}</span>
+              </div>
+              {/* Icon */}
+              <div style={{ width:52, height:52, display:"flex", alignItems:"center", justifyContent:"center", background:`${item.accent}11`, border:`1px solid ${item.accent}33`, clipPath:"polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%)", marginTop:6 }}>
+                <span style={{ fontSize:26 }}>{item.icon}</span>
+              </div>
+              <span style={{ fontSize:10.5, fontFamily:"'Cinzel',serif", fontWeight:700, color:"#d0b890", textAlign:"center", lineHeight:1.2 }}>{item.name}</span>
+              {/* Buy button */}
+              <button className="w-full flex items-center justify-center" style={{ height:30, background:item.price===null?`linear-gradient(90deg,#0a3a10,#0d5518)`:`linear-gradient(90deg,#5a2800,#993a00)`, border:`1px solid ${item.price===null?"#22dd6e66":"#ff882244"}`, clipPath:"polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%)" }}>
+                <span style={{ fontSize:11, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:item.price===null?"#44ff88":"#ffcc66" }}>{item.priceLabel}</span>
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── OUTFIT SHOP ──────────────────────────────────────────────────────────────
+function OutfitShopContent() {
+  const [selected, setSelected] = useState<string|null>(null);
+  const outfit = selected ? OUTFIT_ITEMS.find(o => o.id === selected) : null;
+  return (
+    <div className="flex-1 flex flex-col" style={{ background:"linear-gradient(180deg,#0e0c18 0%,#08060e 100%)" }}>
+      {/* Preview area */}
+      <div className="relative flex-shrink-0 flex flex-col items-center justify-center" style={{ height:260, overflow:"hidden" }}>
+        <ImageWithFallback src={outfitShopImg} alt="Outfit Shop" className="absolute inset-0 w-full h-full object-cover object-top" style={{ opacity:0.22 }}/>
+        <div className="absolute inset-0" style={{ background:"linear-gradient(180deg,#0e0c1888 0%,#0e0c18 100%)" }}/>
+        {/* Status */}
+        <div className="relative mb-3 px-4" style={{ height:22, background:"#1a1428", border:"1px solid #3d206066", clipPath:"polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%)" }}>
+          <span style={{ fontSize:9, fontFamily:"'Cinzel',serif", fontWeight:700, color: outfit?"#ffd700":"#4a3870", letterSpacing:"0.06em" }}>{outfit ? outfit.name.toUpperCase() : "NOT SELECTED"}</span>
+        </div>
+        {/* Character display */}
+        <div className="relative flex items-center justify-center" style={{ width:140, height:160 }}>
+          <svg viewBox="0 0 140 160" className="absolute inset-0 w-full h-full">
+            <ellipse cx="70" cy="150" rx="55" ry="8" fill={outfit?.color ?? "#3d2060"} opacity="0.18"/>
+            <circle cx="70" cy="80" r="52" fill={`${outfit?.color ?? "#2a1845"}22`} stroke={`${outfit?.color ?? "#3d2060"}44`} strokeWidth="1"/>
+            <circle cx="70" cy="80" r="38" fill={`${outfit?.color ?? "#2a1845"}33`} stroke={`${outfit?.color ?? "#3d2060"}22`} strokeWidth="0.6"/>
+          </svg>
+          <span style={{ position:"relative", fontSize:80, filter:`drop-shadow(0 0 18px ${outfit?.color ?? "#8855cc"}55) drop-shadow(0 4px 12px #00000088)` }}>{outfit?.icon ?? "🧝"}</span>
+        </div>
+      </div>
+      {/* Divider */}
+      <div className="flex-shrink-0 flex items-center gap-2 px-3 py-2">
+        <div style={{ flex:1, height:1, background:"linear-gradient(90deg,transparent,#3d2060)" }}/>
+        <span style={{ fontSize:8.5, fontFamily:"'Cinzel',serif", fontWeight:700, color:"#3a2858", letterSpacing:"0.1em" }}>OUTFITS</span>
+        <div style={{ flex:1, height:1, background:"linear-gradient(90deg,#3d2060,transparent)" }}/>
+      </div>
+      {/* Outfit thumbnails */}
+      <div className="flex-1 overflow-y-auto px-3 pb-4" style={{ scrollbarWidth:"none" }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8 }}>
+          {OUTFIT_ITEMS.map(o => (
+            <button key={o.id} onClick={() => setSelected(s => s===o.id?null:o.id)} className="relative flex flex-col items-center gap-1 py-2">
+              <div className="relative flex items-center justify-center" style={{ width:56, height:56, background:selected===o.id?`${o.color}22`:"#0d0820", border:`1.5px solid ${selected===o.id?o.color:"#2a184555"}`, clipPath:"polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%)", filter:selected===o.id?`drop-shadow(0 0 8px ${o.color}55)`:undefined }}>
+                <span style={{ fontSize:26 }}>{o.icon}</span>
+                {selected===o.id && <div style={{ position:"absolute", top:1, right:1, width:7, height:7, borderRadius:"50%", background:o.color }}/>}
+              </div>
+              <span style={{ fontSize:7.5, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:selected===o.id?o.color:"#3a2858", textAlign:"center", lineHeight:1.2 }}>{o.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      {/* Set button */}
+      <div className="flex-shrink-0 px-4 pb-4">
+        <button className="w-full flex items-center justify-center" style={{ height:44, background:selected?"linear-gradient(90deg,#1a0855,#2a1070,#1a0855)":"#0a0820", border:`1px solid ${selected?"#aa44ff66":"#2a184544"}`, clipPath:"polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%)", filter:selected?"drop-shadow(0 0 8px #aa44ff33)":undefined }}>
+          <span style={{ fontSize:12, fontFamily:"'Cinzel',serif", fontWeight:700, color:selected?"#c888ff":"#2a1845", letterSpacing:"0.1em" }}>{selected?"EQUIP OUTFIT":"SELECT AN OUTFIT"}</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── BUNDLE SHOP ──────────────────────────────────────────────────────────────
+function BundleShopContent() {
+  return (
+    <div className="flex-1 flex flex-col" style={{ background:"linear-gradient(180deg,#1a0c04 0%,#0e0804 100%)" }}>
+      {/* Banner */}
+      <div className="relative flex-shrink-0 flex items-center justify-center" style={{ height:80, overflow:"hidden" }}>
+        <ImageWithFallback src={bundleShopImg} alt="Bundle Shop" className="absolute inset-0 w-full h-full object-cover object-top" style={{ opacity:0.3 }}/>
+        <div className="absolute inset-0" style={{ background:"linear-gradient(180deg,transparent 30%,#1a0c04 100%)" }}/>
+        <span style={{ position:"relative", fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:18, color:"#ffd700", textShadow:"0 0 14px #ffd70044" }}>Pack Shop</span>
+      </div>
+      {/* Bundle list */}
+      <div className="flex-1 overflow-y-auto px-3 pb-4 flex flex-col gap-3" style={{ scrollbarWidth:"none" }}>
+        {BUNDLE_ITEMS.map((b,idx) => (
+          <div key={b.id} style={{ background:"linear-gradient(160deg,#1e1004 0%,#130a04 100%)", border:`1px solid ${b.color}33`, clipPath:"polygon(0 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%)" }}>
+            <div style={{ height:2, background:`linear-gradient(90deg,transparent,${b.color}66,transparent)` }}/>
+            <div className="flex items-center gap-3 px-3 py-3">
+              {/* Icon area */}
+              <div className="relative flex items-center justify-center flex-shrink-0" style={{ width:72, height:72, background:`${b.color}11`, border:`1px solid ${b.color}33` }}>
+                <span style={{ fontSize:38, filter:`drop-shadow(0 0 12px ${b.color}55)` }}>{b.icon}</span>
+                {/* Counter badge */}
+                <div style={{ position:"absolute", bottom:-1, right:-1, padding:"2px 5px", background:b.color, clipPath:"polygon(4px 0%,100% 0%,100% 100%,0% 100%)" }}>
+                  <span style={{ fontSize:7, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:"#000" }}>{b.sub}</span>
+                </div>
+              </div>
+              <div className="flex-1 flex flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                  <span style={{ fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:13, color:"#d0b890", letterSpacing:"0.04em" }}>{b.name}</span>
+                  <div style={{ padding:"1px 6px", background:`${b.color}22`, border:`1px solid ${b.color}55`, clipPath:"polygon(3px 0%,100% 0%,calc(100% - 3px) 100%,0% 100%)" }}>
+                    <span style={{ fontSize:7, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:b.color }}>{b.tag}</span>
+                  </div>
+                </div>
+                {/* Contents preview */}
+                <div className="flex gap-1">
+                  {["💎×50","📜×3","🌟×5"].map((c,i) => (
+                    <span key={i} style={{ fontSize:9, color:"#6050a0", fontFamily:"'Rajdhani',sans-serif", fontWeight:600 }}>{c}</span>
+                  ))}
+                </div>
+                <button className="flex items-center justify-center" style={{ height:36, background:"linear-gradient(90deg,#5a2200,#994400,#5a2200)", border:"1px solid #ff880033", clipPath:"polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%)", filter:"drop-shadow(0 0 5px #ff660011)" }}>
+                  <span style={{ fontSize:12, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:"#ffcc66" }}>{b.price}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── PET GACHA SHOP ───────────────────────────────────────────────────────────
+function PetGachaContent() {
+  const [gachaTab, setGachaTab] = useState<"skill"|"pal">("skill");
+  const pets = {
+    skill: { icon:"🐉", name:"Skill Summon", color:"#448aff", level:46, bg:"#0a1a40" },
+    pal:   { icon:"🐾", name:"Pal Summon",   color:"#22dd6e", level:46, bg:"#0a3018" },
+  };
+  const p = pets[gachaTab];
+  const draws = [
+    { label:"Draw×35", cost:"$51",  costType:"usd",  color:"#ff9922" },
+    { label:"Draw×35", cost:"15",   costType:"gem",  color:"#00e5c8" },
+    { label:"Draw×35", cost:"Free", costType:"free", color:"#22dd6e" },
+    { label:"Draw×999",cost:"$999", costType:"usd",  color:"#aa44ff" },
+  ];
+  return (
+    <div className="flex-1 flex flex-col" style={{ background:"linear-gradient(180deg,#08101e 0%,#060a12 100%)" }}>
+      {/* Gacha sub-tabs */}
+      <div className="relative flex flex-shrink-0" style={{ height:38, background:"#060a12", borderBottom:"1px solid #1a2a4444" }}>
+        {(["skill","pal"] as const).map((t,i) => (
+          <button key={t} onClick={() => setGachaTab(t)} className="flex-1 flex items-center justify-center relative">
+            <span style={{ fontSize:11, fontFamily:"'Cinzel',serif", fontWeight:700, letterSpacing:"0.06em", color:gachaTab===t?pets[t].color:"#2a3850" }}>{t.charAt(0).toUpperCase()+t.slice(1)}</span>
+            {gachaTab===t && <div style={{ position:"absolute", bottom:0, left:"25%", right:"25%", height:2, background:`linear-gradient(90deg,transparent,${p.color},transparent)` }}/>}
+          </button>
+        ))}
+      </div>
+      {/* Pet preview */}
+      <div className="relative flex-shrink-0 flex flex-col items-center justify-center" style={{ height:200, overflow:"hidden" }}>
+        <ImageWithFallback src={petGachaImg} alt="Pet Gacha" className="absolute inset-0 w-full h-full object-cover object-center" style={{ opacity:0.25 }}/>
+        <div className="absolute inset-0" style={{ background:`linear-gradient(180deg,transparent 20%,#08101e 100%)` }}/>
+        {/* Level badge */}
+        <div className="relative mb-2 px-3" style={{ height:20, background:p.bg, border:`1px solid ${p.color}44`, clipPath:"polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)" }}>
+          <span style={{ fontSize:9, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:p.color }}>Lv.{p.level} {p.name}</span>
+        </div>
+        {/* Animated pet */}
+        <div className="relative flex items-center justify-center" style={{ width:140, height:130 }}>
+          <svg viewBox="0 0 140 130" className="absolute inset-0 w-full h-full">
+            <ellipse cx="70" cy="122" rx="50" ry="6" fill={p.color} opacity="0.12"/>
+            <circle cx="70" cy="65" r="52" fill={`${p.color}10`} stroke={`${p.color}22`} strokeWidth="1"/>
+          </svg>
+          <span style={{ position:"relative", fontSize:74, filter:`drop-shadow(0 0 20px ${p.color}44) drop-shadow(0 6px 14px #00000088)` }}>{p.icon}</span>
+        </div>
+      </div>
+      {/* Draw buttons */}
+      <div className="flex-1 flex flex-col justify-center px-3 pb-3 gap-2">
+        {draws.map((d,i) => (
+          <button key={i} className="relative w-full flex items-center justify-between px-4" style={{ height:50, background:d.costType==="free"?`linear-gradient(90deg,#0a3018,#0d4020,#0a3018)`:d.costType==="gem"?`linear-gradient(90deg,#041828,#061e35,#041828)`:`linear-gradient(90deg,#1a0800,#2a1000,#1a0800)`, border:`1px solid ${d.color}44`, clipPath:"polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%)", filter:`drop-shadow(0 1px 6px ${d.color}11)` }}>
+            <div style={{ position:"absolute", left:0, top:10, bottom:10, width:2, background:d.color, borderRadius:1, opacity:0.8 }}/>
+            <div className="flex flex-col items-start">
+              <span style={{ fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:13, color:"#d0c8e8", letterSpacing:"0.05em" }}>{d.label}</span>
+              <span style={{ fontSize:8, color:d.color, fontFamily:"'Rajdhani',sans-serif", fontWeight:600 }}>{gachaTab==="skill"?"Skill cards guaranteed":"Pal chance up"}</span>
+            </div>
+            <div className="flex items-center justify-center px-4" style={{ height:32, background:`${d.color}18`, border:`1px solid ${d.color}66`, clipPath:"polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%)" }}>
+              <span style={{ fontSize:12, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:d.color }}>{d.cost}</span>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── SHOP SCREEN ──────────────────────────────────────────────────────────────
+function ShopScreen({ onBack }: { onBack: () => void }) {
+  const [tab, setTab] = useState<ShopTab>("supply");
+  const titles: Record<ShopTab, string> = {
+    supply:  "Supply Store",
+    limited: "Limited-Time Shop",
+    outfit:  "Outfit Shop",
+    bundle:  "Pack Shop",
+    gacha:   "Pet Gacha",
+  };
+  return (
+    <div className="absolute inset-0 flex flex-col" style={{ background:"#0e0804" }}>
+      <ShopHeader title={titles[tab]} onBack={onBack}/>
+      <ShopTabBar active={tab} setActive={setTab}/>
+      {tab === "supply"  && <SupplyShopContent/>}
+      {tab === "limited" && <LimitedShopContent/>}
+      {tab === "outfit"  && <OutfitShopContent/>}
+      {tab === "bundle"  && <BundleShopContent/>}
+      {tab === "gacha"   && <PetGachaContent/>}
+    </div>
+  );
+}
+
 // ─── BATTLE SHARED COMPONENTS ─────────────────────────────────────────────────
 function SkillBtn({ icon, locked = false, idx, levelReq }: { icon?: React.ReactNode; locked?: boolean; idx: number; levelReq?: number }) {
   const [pressed, setPressed] = useState(false);
@@ -1747,6 +2146,7 @@ export default function App() {
 
   const isHeroes = activeNav === "heroes";
   const isGuild  = activeNav === "guild";
+  const isShop   = activeNav === "shop";
   const isBattle = activeNav === "battle";
   const isDungeon = isBattle && battleView === "dungeon";
   const isLobby = isBattle && battleView === "lobby";
@@ -1775,8 +2175,9 @@ export default function App() {
         {isHeroes && <HeroesScreen onBack={() => setActiveNav("battle")}/>}
         {isDungeon && <DungeonScreen onClose={() => setBattleView("lobby")}/>}
         {isGuild && <GuildScreen onBack={() => setActiveNav("battle")}/>}
+        {isShop && <ShopScreen onBack={() => setActiveNav("battle")}/>}
 
-        {!isHeroes && !isDungeon && !isGuild && (
+        {!isHeroes && !isDungeon && !isGuild && !isShop && (
           <>
             {/* TOP HUD */}
             <div className="relative z-30 flex items-start gap-2 px-2 pt-2 pb-1" style={{ minHeight: 74 }}>

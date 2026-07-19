@@ -7,13 +7,18 @@ extends Control
 @onready var _top_hud: TopHud = $SafeAreaContainer/MainColumn/TopHud
 @onready var _stage_plaque: StagePlaque = $SafeAreaContainer/MainColumn/StagePlaque
 @onready var _heroes_tab: HeroesTab = $SafeAreaContainer/MainColumn/HeroesTab
+@onready var _battle_mode_view: BattleModeView = $SafeAreaContainer/MainColumn/BattleModeView
 @onready var _combat_view: CombatView = $SafeAreaContainer/MainColumn/CombatView
 @onready var _dock_divider: Control = $SafeAreaContainer/MainColumn/DockDivider
 @onready var _skill_dock: SkillDock = $SafeAreaContainer/MainColumn/SkillDock
 @onready var _chat_strip: ChatStrip = $SafeAreaContainer/MainColumn/ChatStrip
 @onready var _bottom_nav: BottomNav = $SafeAreaContainer/MainColumn/BottomNav
+@onready var _dungeon_flow: DungeonFlow = $DungeonFlow
+@onready var _guild_screen: GuildScreen = $SafeAreaContainer/MainColumn/GuildScreen
+@onready var _shop_screen: ShopScreen = $SafeAreaContainer/MainColumn/ShopScreen
 
 const HEROES_PLAQUE := "Heroes · Class Selection"
+const BATTLE_MODES_PLAQUE := "Battle Modes"
 
 var _battle_plaque := ""
 
@@ -29,6 +34,16 @@ func _ready() -> void:
 	_top_hud.map_open_requested.connect(_on_map_open_requested)
 	_top_hud.rewards_open_requested.connect(_on_rewards_open_requested)
 	_heroes_tab.back_requested.connect(_on_heroes_back_requested)
+	_battle_mode_view.dungeons_requested.connect(_on_dungeons_requested)
+	_battle_mode_view.home_requested.connect(_show_farming)
+	_dungeon_flow.closed.connect(_show_battle_lobby)
+	_guild_screen.back_requested.connect(_on_guild_back_requested)
+	_shop_screen.back_requested.connect(_on_shop_back_requested)
+	queue_redraw()
+
+
+func _draw() -> void:
+	draw_rect(Rect2(Vector2.ZERO, size), UIPalette.CANVAS)
 
 
 func _apply_safe_area() -> void:
@@ -59,26 +74,99 @@ func _on_auto_toggled(active: bool) -> void:
 
 
 func _on_tab_selected(tab_id: StringName) -> void:
-	show_tab(tab_id)
+	if tab_id == &"battle":
+		if _heroes_tab.visible:
+			_show_battle_lobby()
+		elif _battle_mode_view.visible:
+			_show_farming()
+		else:
+			_show_battle_lobby()
+	else:
+		show_tab(tab_id)
 
 
 ## Visibility routing between in-screen destinations. Heroes keeps the shared
 ## shell (HUD, plaque, divider, nav) and swaps the combat bands; battle state
 ## is preserved because nodes are only hidden.
 func show_tab(tab_id: StringName) -> void:
-	var heroes := tab_id == &"heroes"
-	if heroes == _heroes_tab.visible:
-		return
-	_heroes_tab.visible = heroes
-	_combat_view.visible = not heroes
-	_dock_divider.visible = not heroes
-	_skill_dock.visible = not heroes
-	_chat_strip.visible = not heroes
-	if heroes:
-		_battle_plaque = _stage_plaque.stage_name
-		_stage_plaque.stage_name = HEROES_PLAQUE
-	elif not _battle_plaque.is_empty():
+	if tab_id == &"heroes":
+		_show_heroes()
+	elif tab_id == &"guild":
+		_show_guild()
+	elif tab_id == &"shop":
+		_show_shop()
+	else:
+		_show_farming()
+
+
+func _show_heroes() -> void:
+	_capture_battle_plaque()
+	_set_shell_visibility(false, false, true, false, false)
+	_stage_plaque.stage_name = HEROES_PLAQUE
+
+
+func _show_farming() -> void:
+	_set_shell_visibility(true, false, false, false, false)
+	if not _battle_plaque.is_empty():
 		_stage_plaque.stage_name = _battle_plaque
+
+
+func _show_battle_lobby() -> void:
+	_capture_battle_plaque()
+	_bottom_nav.active_tab = &"battle"
+	_set_shell_visibility(false, true, false, false, false)
+	_stage_plaque.stage_name = BATTLE_MODES_PLAQUE
+
+
+func _set_shell_visibility(farming: bool, lobby: bool, heroes: bool, guild: bool, shop: bool) -> void:
+	_safe_area.visible = true
+	_dungeon_flow.visible = false
+	_top_hud.visible = not guild and not shop
+	_stage_plaque.visible = not guild and not shop
+	_guild_screen.visible = guild
+	_shop_screen.visible = shop
+	_combat_view.visible = farming
+	_battle_mode_view.visible = lobby
+	_heroes_tab.visible = heroes
+	_dock_divider.visible = farming
+	_skill_dock.visible = farming
+	_chat_strip.visible = farming
+	$SafeAreaContainer/MainColumn/NavDivider.visible = farming or heroes or guild or shop
+	_bottom_nav.visible = true
+
+
+func _capture_battle_plaque() -> void:
+	if _battle_plaque.is_empty() and _stage_plaque.stage_name != HEROES_PLAQUE and _stage_plaque.stage_name != BATTLE_MODES_PLAQUE:
+		_battle_plaque = _stage_plaque.stage_name
+
+
+func _on_dungeons_requested() -> void:
+	_safe_area.visible = false
+	_guild_screen.visible = false
+	_dungeon_flow.visible = true
+	_dungeon_flow.open()
+
+
+func _show_guild() -> void:
+	_bottom_nav.active_tab = &"guild"
+	_set_shell_visibility(false, false, false, true, false)
+	_guild_screen.open()
+
+
+func _show_shop() -> void:
+	_bottom_nav.active_tab = &"shop"
+	_set_shell_visibility(false, false, false, false, true)
+	_shop_screen.open()
+
+
+func _on_guild_back_requested() -> void:
+	_bottom_nav.active_tab = &"battle"
+	_show_farming()
+
+
+func _on_shop_back_requested() -> void:
+	_bottom_nav.active_tab = &"battle"
+	_show_farming()
 
 
 func _on_chat_open_requested() -> void:
@@ -89,7 +177,7 @@ func _on_chat_open_requested() -> void:
 ## The Heroes header's Back button returns to battle like the nav destination.
 func _on_heroes_back_requested() -> void:
 	_bottom_nav.active_tab = &"battle"
-	show_tab(&"battle")
+	_show_farming()
 
 
 func _on_map_open_requested() -> void:

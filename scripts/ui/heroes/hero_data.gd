@@ -25,7 +25,6 @@ static func hero() -> Dictionary:
 		"hp_max": 158,
 		"power": 808,
 		"class_id": &"druid",
-		"selector": "Hero 1",
 	}
 
 
