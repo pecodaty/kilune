@@ -9,11 +9,17 @@ signal abilities_pressed
 signal class_selected
 
 const OUTER_MARGIN := 4
+const DRAG_THRESHOLD := 6.0
 
 var _cls: Dictionary = HeroClassData.class_data(&"druid")
 var _is_current := false
 var _sections: VBoxContainer
 var _action: SelectAction
+var _drag_active := false
+var _drag_started := false
+var _drag_pointer := -1
+var _drag_origin := Vector2.ZERO
+var _drag_scroll_origin := 0
 
 
 ## Panel surface: gradient, 1px border, thin gold corner brackets.
@@ -70,6 +76,48 @@ func set_class(cls: Dictionary, is_current: bool) -> void:
 	if is_node_ready():
 		_rebuild()
 		scroll_vertical = 0 # Default to the top for a newly browsed class.
+
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		if event.pressed and not _drag_active and get_global_rect().has_point(event.position):
+			_begin_drag(event.position, event.index)
+		elif not event.pressed and _drag_active and event.index == _drag_pointer:
+			_end_drag()
+	elif event is InputEventScreenDrag and _drag_active and event.index == _drag_pointer:
+		_update_drag(event.position)
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed and not _drag_active and get_global_rect().has_point(event.position):
+			_begin_drag(event.position, -1)
+		elif not event.pressed and _drag_active and _drag_pointer == -1:
+			_end_drag()
+	elif event is InputEventMouseMotion and _drag_active and _drag_pointer == -1:
+		_update_drag(event.position)
+
+
+func _begin_drag(position: Vector2, pointer: int) -> void:
+	_drag_active = true
+	_drag_started = false
+	_drag_pointer = pointer
+	_drag_origin = position
+	_drag_scroll_origin = scroll_vertical
+
+
+func _update_drag(position: Vector2) -> void:
+	var distance := position.y - _drag_origin.y
+	if absf(distance) > DRAG_THRESHOLD:
+		_drag_started = true
+	if _drag_started:
+		scroll_vertical = _drag_scroll_origin - int(distance)
+		get_viewport().set_input_as_handled()
+
+
+func _end_drag() -> void:
+	if _drag_started:
+		get_viewport().set_input_as_handled()
+	_drag_active = false
+	_drag_started = false
+	_drag_pointer = -1
 
 
 func _rebuild() -> void:

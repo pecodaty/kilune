@@ -1,8 +1,6 @@
 class_name ShopScreen
 extends Control
 ## Shared-shell storefront. Purchase actions are signals; economy state lives elsewhere.
-
-signal back_requested
 signal purchase_requested(item_id: StringName)
 signal outfit_equipped(outfit_id: StringName)
 signal summon_requested(kind: StringName, offer_id: StringName)
@@ -87,12 +85,9 @@ func _build_header() -> void:
 	for tab in TABS:
 		if tab["id"] == _active_tab: title_text = tab["title"]
 	var title := _label(title_text, true, 15, UIPalette.GOLD)
-	title.position = Vector2(14, 13); title.size = Vector2(maxf(120, size.x - 218), 30); add_child(title)
-	_add_currency(Vector2(size.x - 204, 17), Vector2(66, 24), &"gem", "26,791", Color("#55C8FF"))
-	_add_currency(Vector2(size.x - 134, 17), Vector2(64, 24), &"coin", "11,734", Color("#FFAA33"))
-	var back := _button("Back", Color("#8A6040"), Color("#8B6200"))
-	back.position = Vector2(size.x - 66, 17); back.size = Vector2(54, 24)
-	back.pressed.connect(func() -> void: back_requested.emit()); add_child(back)
+	title.position = Vector2(14, 13); title.size = Vector2(maxf(120, size.x - 152), 30); add_child(title)
+	_add_currency(Vector2(size.x - 138, 17), Vector2(66, 24), &"gem", "26,791", Color("#55C8FF"))
+	_add_currency(Vector2(size.x - 68, 17), Vector2(64, 24), &"coin", "11,734", Color("#FFAA33"))
 
 
 func _add_currency(at: Vector2, currency_size: Vector2, icon_id: StringName, value: String, color: Color) -> void:

@@ -19,7 +19,8 @@ signal quick_action_requested(action_id: StringName)
 @onready var _guild_screen: GuildScreen = $SafeAreaContainer/MainColumn/GuildScreen
 @onready var _shop_screen: ShopScreen = $SafeAreaContainer/MainColumn/ShopScreen
 @onready var _floating_menu: FloatingRightMenu = $FloatingRightMenu
-@onready var _backpack_screen: BackpackScreen = $BackpackScreen
+@onready var _backpack_screen: BackpackScreen = $SafeAreaContainer/MainColumn/BackpackScreen
+@onready var _mailbox_screen: MailboxScreen = $SafeAreaContainer/MainColumn/MailboxScreen
 
 const HEROES_PLAQUE := "Heroes · Class Selection"
 const BATTLE_MODES_PLAQUE := "Battle Modes"
@@ -35,16 +36,11 @@ func _ready() -> void:
 	_skill_dock.auto_toggled.connect(_on_auto_toggled)
 	_bottom_nav.tab_selected.connect(_on_tab_selected)
 	_chat_strip.chat_open_requested.connect(_on_chat_open_requested)
-	_top_hud.map_open_requested.connect(_on_map_open_requested)
-	_top_hud.rewards_open_requested.connect(_on_rewards_open_requested)
-	_heroes_tab.back_requested.connect(_on_heroes_back_requested)
 	_battle_mode_view.dungeons_requested.connect(_on_dungeons_requested)
 	_battle_mode_view.home_requested.connect(_show_farming)
 	_dungeon_flow.closed.connect(_show_battle_lobby)
-	_guild_screen.back_requested.connect(_on_guild_back_requested)
-	_shop_screen.back_requested.connect(_on_shop_back_requested)
 	_floating_menu.backpack_requested.connect(_open_backpack)
-	_floating_menu.mail_requested.connect(func() -> void: quick_action_requested.emit(&"mail"))
+	_floating_menu.mail_requested.connect(_open_mailbox)
 	_floating_menu.map_requested.connect(_on_map_open_requested)
 	_floating_menu.config_requested.connect(func() -> void: quick_action_requested.emit(&"config"))
 	queue_redraw()
@@ -82,6 +78,10 @@ func _on_auto_toggled(active: bool) -> void:
 
 
 func _on_tab_selected(tab_id: StringName) -> void:
+	if _backpack_screen.visible or _mailbox_screen.visible:
+		if tab_id == &"battle": _show_farming()
+		else: show_tab(tab_id)
+		return
 	if tab_id == &"battle":
 		if _heroes_tab.visible:
 			_show_battle_lobby()
@@ -109,12 +109,12 @@ func show_tab(tab_id: StringName) -> void:
 
 func _show_heroes() -> void:
 	_capture_battle_plaque()
-	_set_shell_visibility(false, false, true, false, false)
+	_set_shell_visibility(false, false, true, false, false, false, false)
 	_stage_plaque.stage_name = HEROES_PLAQUE
 
 
 func _show_farming() -> void:
-	_set_shell_visibility(true, false, false, false, false)
+	_set_shell_visibility(true, false, false, false, false, false, false)
 	if not _battle_plaque.is_empty():
 		_stage_plaque.stage_name = _battle_plaque
 
@@ -122,24 +122,26 @@ func _show_farming() -> void:
 func _show_battle_lobby() -> void:
 	_capture_battle_plaque()
 	_bottom_nav.active_tab = &"battle"
-	_set_shell_visibility(false, true, false, false, false)
+	_set_shell_visibility(false, true, false, false, false, false, false)
 	_stage_plaque.stage_name = BATTLE_MODES_PLAQUE
 
 
-func _set_shell_visibility(farming: bool, lobby: bool, heroes: bool, guild: bool, shop: bool) -> void:
+func _set_shell_visibility(farming: bool, lobby: bool, heroes: bool, guild: bool, shop: bool, backpack: bool, mailbox: bool) -> void:
 	_safe_area.visible = true
 	_dungeon_flow.visible = false
-	_top_hud.visible = not guild and not shop
-	_stage_plaque.visible = not guild and not shop
+	_top_hud.visible = not guild and not shop and not backpack and not mailbox
+	_stage_plaque.visible = not guild and not shop and not backpack and not mailbox
 	_guild_screen.visible = guild
 	_shop_screen.visible = shop
+	_backpack_screen.visible = backpack
+	_mailbox_screen.visible = mailbox
 	_combat_view.visible = farming
 	_battle_mode_view.visible = lobby
 	_heroes_tab.visible = heroes
 	_dock_divider.visible = farming
 	_skill_dock.visible = farming
 	_chat_strip.visible = farming
-	$SafeAreaContainer/MainColumn/NavDivider.visible = farming or heroes or guild or shop
+	$SafeAreaContainer/MainColumn/NavDivider.visible = farming or heroes or guild or shop or backpack or mailbox
 	_bottom_nav.visible = true
 	_floating_menu.visible = farming or lobby
 	if not _floating_menu.visible: _floating_menu.close()
@@ -153,6 +155,7 @@ func _capture_battle_plaque() -> void:
 func _on_dungeons_requested() -> void:
 	_safe_area.visible = false
 	_guild_screen.visible = false
+	_mailbox_screen.visible = false
 	_floating_menu.visible = false
 	_dungeon_flow.visible = true
 	_dungeon_flow.open()
@@ -160,28 +163,24 @@ func _on_dungeons_requested() -> void:
 
 func _show_guild() -> void:
 	_bottom_nav.active_tab = &"guild"
-	_set_shell_visibility(false, false, false, true, false)
+	_set_shell_visibility(false, false, false, true, false, false, false)
 	_guild_screen.open()
 
 
 func _show_shop() -> void:
 	_bottom_nav.active_tab = &"shop"
-	_set_shell_visibility(false, false, false, false, true)
+	_set_shell_visibility(false, false, false, false, true, false, false)
 	_shop_screen.open()
 
 
-func _on_guild_back_requested() -> void:
-	_bottom_nav.active_tab = &"battle"
-	_show_farming()
-
-
-func _on_shop_back_requested() -> void:
-	_bottom_nav.active_tab = &"battle"
-	_show_farming()
-
-
 func _open_backpack() -> void:
+	_set_shell_visibility(false, false, false, false, false, true, false)
 	_backpack_screen.open()
+
+
+func _open_mailbox() -> void:
+	_set_shell_visibility(false, false, false, false, false, false, true)
+	_mailbox_screen.open()
 
 
 func _on_chat_open_requested() -> void:
@@ -189,17 +188,6 @@ func _on_chat_open_requested() -> void:
 	pass
 
 
-## The Heroes header's Back button returns to battle like the nav destination.
-func _on_heroes_back_requested() -> void:
-	_bottom_nav.active_tab = &"battle"
-	_show_farming()
-
-
 func _on_map_open_requested() -> void:
 	# WorldMapSystem hook.
-	pass
-
-
-func _on_rewards_open_requested() -> void:
-	# RewardSystem hook.
 	pass

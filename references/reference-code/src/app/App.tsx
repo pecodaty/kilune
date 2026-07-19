@@ -1213,11 +1213,11 @@ function BackpackScreen({ onClose }: { onClose: () => void }) {
 }
 
 // ─── FLOATING RIGHT MENU ──────────────────────────────────────────────────────
-function FloatingRightMenu({ onOpenBackpack }: { onOpenBackpack: () => void }) {
+function FloatingRightMenu({ onOpenBackpack, onOpenMailbox }: { onOpenBackpack: () => void; onOpenMailbox: () => void }) {
   const [open, setOpen] = useState(false);
   const buttons = [
     { icon:"🎒", label:"Bag",    action: onOpenBackpack,           color:"#00e5c8" },
-    { icon:"📬", label:"Mail",   action: () => {},                 color:"#ffd700" },
+    { icon:"📬", label:"Mail",   action: onOpenMailbox,            color:"#ffd700" },
     { icon:"🗺️", label:"Map",    action: () => {},                 color:"#22dd6e" },
     { icon:"⚙️", label:"Config", action: () => {},                 color:"#aa44ff" },
   ];
@@ -1246,6 +1246,170 @@ function FloatingRightMenu({ onOpenBackpack }: { onOpenBackpack: () => void }) {
             </button>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── MAILBOX DATA ─────────────────────────────────────────────────────────────
+interface MailItem {
+  id: string; title: string; body: string;
+  date: string; isNew: boolean; isRead: boolean;
+  reward?: { icon: string; qty?: number; color: string };
+}
+const MAIL_ITEMS_DATA: MailItem[] = [
+  { id:"m1", title:"Unclaimed Event Rewards",       body:"You have unclaimed rewards from the Starfall Event. Collect before they expire!",            date:"2026/7/19  00:00 (UTC-4)", isNew:true,  isRead:false, reward:{ icon:"💎", qty:150, color:"#448aff" } },
+  { id:"m2", title:"Leader Auto-Transfer Notice",   body:"Your guild leadership has been auto-transferred after 14 days of inactivity.",               date:"2026/7/18  00:00 (UTC-4)", isNew:true,  isRead:false },
+  { id:"m3", title:"Unclaimed Battle Pass Rewards", body:"Battle Pass Season 3 rewards are waiting. Claim your premium track bonuses now.",            date:"2026/7/18  18:47 (UTC-4)", isNew:true,  isRead:false, reward:{ icon:"💎", qty:200, color:"#448aff" } },
+  { id:"m4", title:"Chrono Tower Week Rewards",     body:"Congratulations! You ranked in the top 500 this week. Here are your tower rewards.",         date:"2026/7/18  18:47 (UTC-4)", isNew:true,  isRead:false, reward:{ icon:"🌟", qty:5,   color:"#ffd700" } },
+  { id:"m5", title:"Cloud Ascension Rewards",       body:"Your Cloud Ascension run rewards for this period have been distributed. Well done!",         date:"2026/7/18  18:47 (UTC-4)", isNew:true,  isRead:false, reward:{ icon:"📜", qty:3,   color:"#aa44ff" } },
+  { id:"m6", title:"Maintenance Compensation",      body:"Thank you for your patience during scheduled maintenance. Here is a small gift from us.",    date:"2026/7/17  09:00 (UTC-4)", isNew:false, isRead:true,  reward:{ icon:"🪙", qty:5000,color:"#ff9922" } },
+  { id:"m7", title:"Guild Donation Bonus",          body:"Your guild reached Donation Level 5 this week. Bonus rewards have been issued to all members.",date:"2026/7/16  12:00 (UTC-4)",isNew:false, isRead:true } ,
+];
+
+// ─── MAILBOX SCREEN ───────────────────────────────────────────────────────────
+function MailboxScreen({ onClose }: { onClose: () => void }) {
+  const [mails, setMails] = useState<MailItem[]>(MAIL_ITEMS_DATA);
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  function claimAll() {
+    setMails(ms => ms.map(m => ({ ...m, isNew: false, isRead: true })));
+  }
+  function deleteRead() {
+    setMails(ms => ms.filter(m => !m.isRead));
+  }
+  function toggleExpand(id: string) {
+    setMails(ms => ms.map(m => m.id === id ? { ...m, isNew: false, isRead: true } : m));
+    setExpanded(e => e === id ? null : id);
+  }
+
+  const unreadCount = mails.filter(m => m.isNew).length;
+
+  return (
+    <div className="absolute inset-0 z-40 flex flex-col" style={{ background:"linear-gradient(180deg,#07030e 0%,#0a0418 100%)" }}>
+      {/* Frame border */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 390 844" preserveAspectRatio="none" style={{ zIndex:0 }}>
+        <defs>
+          <linearGradient id="ml-v" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#ffd700" stopOpacity="0.6"/><stop offset="50%" stopColor="#d4a017" stopOpacity="0.3"/><stop offset="100%" stopColor="#ffd700" stopOpacity="0.6"/>
+          </linearGradient>
+          <linearGradient id="ml-h" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#ffd700" stopOpacity="0.6"/><stop offset="50%" stopColor="#d4a017" stopOpacity="0.3"/><stop offset="100%" stopColor="#ffd700" stopOpacity="0.6"/>
+          </linearGradient>
+        </defs>
+        <polyline points="0,30 0,2 30,2"         fill="none" stroke="#ffd700" strokeWidth="2" opacity="0.75"/>
+        <polyline points="360,2 390,2 390,30"    fill="none" stroke="#ffd700" strokeWidth="2" opacity="0.75"/>
+        <polyline points="0,814 0,842 30,842"    fill="none" stroke="#ffd700" strokeWidth="2" opacity="0.75"/>
+        <polyline points="360,842 390,842 390,814" fill="none" stroke="#ffd700" strokeWidth="2" opacity="0.75"/>
+        <line x1="1"   y1="32" x2="1"   y2="812" stroke="url(#ml-v)" strokeWidth="1.5"/>
+        <line x1="389" y1="32" x2="389" y2="812" stroke="url(#ml-v)" strokeWidth="1.5"/>
+        <line x1="32"  y1="1"  x2="358" y2="1"   stroke="url(#ml-h)" strokeWidth="1.5"/>
+        <line x1="32"  y1="843" x2="358" y2="843" stroke="url(#ml-h)" strokeWidth="1.5"/>
+        <polygon points="195,0 201,8 195,5.5 189,8" fill="#ffd700" opacity="0.9"/>
+      </svg>
+
+      {/* Header */}
+      <div className="relative z-10 flex items-center px-4 flex-shrink-0" style={{ height:58, borderBottom:"1px solid #d4a01722" }}>
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 390 58" preserveAspectRatio="none">
+          <defs><linearGradient id="ml-hdr" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#100a04"/><stop offset="100%" stopColor="#0a0612"/></linearGradient></defs>
+          <rect width="390" height="58" fill="url(#ml-hdr)"/>
+          <path d="M 0 58 Q 195 38 390 58" fill="none" stroke="#d4a017" strokeWidth="0.8" opacity="0.35"/>
+        </svg>
+        {/* Envelope icon */}
+        <div className="relative flex items-center justify-center flex-shrink-0 mr-2" style={{ width:32, height:32 }}>
+          <svg viewBox="0 0 32 32" className="absolute inset-0 w-full h-full">
+            <rect x="1" y="6" width="30" height="20" rx="2" fill="#1a1004" stroke="#d4a017" strokeWidth="1"/>
+            <polyline points="1,6 16,18 31,6" fill="none" stroke="#d4a017" strokeWidth="1"/>
+          </svg>
+        </div>
+        <div className="relative flex-1 flex flex-col">
+          <span style={{ fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:16, color:"#ffd700", letterSpacing:"0.08em", textShadow:"0 0 12px #ffd70033" }}>MAILBOX</span>
+          {unreadCount > 0 && <span style={{ fontSize:8.5, color:"#ff9922", fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>{unreadCount} unread</span>}
+        </div>
+        <button onClick={onClose} className="relative flex items-center justify-center px-3" style={{ height:26, background:"#100a04", border:"1px solid #d4a01733", clipPath:"polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%)" }}>
+          <span style={{ fontSize:9.5, fontFamily:"'Cinzel',serif", fontWeight:700, color:"#d4a017", letterSpacing:"0.08em" }}>CLOSE</span>
+        </button>
+      </div>
+
+      {/* Mail list */}
+      <div className="relative z-10 flex-1 overflow-y-auto flex flex-col gap-0" style={{ scrollbarWidth:"none" }}>
+        {mails.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full gap-3">
+            <svg viewBox="0 0 48 48" style={{ width:56, height:56, opacity:0.2 }}>
+              <rect x="2" y="10" width="44" height="30" rx="3" fill="none" stroke="#d4a017" strokeWidth="2"/>
+              <polyline points="2,10 24,28 46,10" fill="none" stroke="#d4a017" strokeWidth="2"/>
+            </svg>
+            <span style={{ fontSize:11, color:"#2a1845", fontFamily:"'Cinzel',serif", fontWeight:700, letterSpacing:"0.08em" }}>NO MAIL</span>
+          </div>
+        ) : mails.map((mail, i) => (
+          <div key={mail.id}>
+            {/* Mail row */}
+            <button onClick={() => toggleExpand(mail.id)} className="w-full flex items-center gap-3 px-4 py-3 text-left" style={{ background:i%2===0?"#0a0614":"#080410", borderBottom:"1px solid #1e143322", minHeight:64 }}>
+              {/* NEW badge */}
+              <div style={{ width:28, flexShrink:0, display:"flex", justifyContent:"center" }}>
+                {mail.isNew && (
+                  <div style={{ padding:"2px 5px", background:"#cc2200", border:"1px solid #ff440055", clipPath:"polygon(3px 0%,100% 0%,calc(100% - 3px) 100%,0% 100%)" }}>
+                    <span style={{ fontSize:7, fontFamily:"'Cinzel',serif", fontWeight:700, color:"#fff", letterSpacing:"0.04em" }}>NEW</span>
+                  </div>
+                )}
+              </div>
+              {/* Envelope */}
+              <div className="flex-shrink-0 flex items-center justify-center" style={{ width:36, height:36 }}>
+                <svg viewBox="0 0 36 36" style={{ width:36, height:36 }}>
+                  <rect x="1" y="7" width="34" height="22" rx="2" fill={mail.isRead?"#1a1428":"#1e0a04"} stroke={mail.isRead?"#3d2060":"#d4a017"} strokeWidth="1.2"/>
+                  <polyline points="1,7 18,20 35,7" fill="none" stroke={mail.isRead?"#3d2060":"#d4a017"} strokeWidth="1.2"/>
+                  {mail.isNew && <circle cx="30" cy="9" r="4" fill="#cc2200"/>}
+                </svg>
+              </div>
+              {/* Content */}
+              <div className="flex-1 flex flex-col gap-0.5 min-w-0">
+                <span style={{ fontSize:11, fontFamily:"'Cinzel',serif", fontWeight:700, color:mail.isRead?"#4a3870":"#d0c0f0", letterSpacing:"0.03em", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{mail.title}</span>
+                <span style={{ fontSize:8.5, color:"#3a2858", fontFamily:"'Rajdhani',sans-serif", fontWeight:500 }}>{mail.date}</span>
+              </div>
+              {/* Reward thumbnail */}
+              {mail.reward && (
+                <div className="relative flex-shrink-0 flex items-center justify-center" style={{ width:40, height:40, background:`${mail.reward.color}18`, border:`1px solid ${mail.reward.color}44`, clipPath:"polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%)" }}>
+                  <span style={{ fontSize:20, filter:`drop-shadow(0 0 5px ${mail.reward.color}55)` }}>{mail.reward.icon}</span>
+                  {mail.reward.qty && (
+                    <div style={{ position:"absolute", bottom:-1, right:-1, padding:"0 4px", background:"#0a0820ee", border:`1px solid ${mail.reward.color}55` }}>
+                      <span style={{ fontSize:7, color:mail.reward.color, fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>{mail.reward.qty >= 1000 ? `${(mail.reward.qty/1000).toFixed(1)}k` : mail.reward.qty}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* Chevron */}
+              <span style={{ fontSize:9, color:"#3a2858", marginLeft:4, flexShrink:0 }}>{expanded===mail.id?"▲":"▼"}</span>
+            </button>
+            {/* Expanded body */}
+            {expanded === mail.id && (
+              <div className="px-5 py-3 flex flex-col gap-3" style={{ background:"#09030f", borderBottom:"1px solid #1e143355" }}>
+                <p style={{ fontSize:10.5, color:"#7060a0", fontFamily:"'Rajdhani',sans-serif", fontWeight:500, lineHeight:1.6 }}>{mail.body}</p>
+                {mail.reward && (
+                  <div className="flex items-center gap-3 p-3" style={{ background:`${mail.reward.color}0e`, border:`1px solid ${mail.reward.color}33`, clipPath:"polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%)" }}>
+                    <span style={{ fontSize:28, filter:`drop-shadow(0 0 8px ${mail.reward.color}55)` }}>{mail.reward.icon}</span>
+                    <div className="flex flex-col">
+                      <span style={{ fontSize:9, color:"#5a4080", fontFamily:"'Rajdhani',sans-serif", fontWeight:600 }}>Attached Reward</span>
+                      <span style={{ fontSize:13, color:mail.reward.color, fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>×{mail.reward.qty?.toLocaleString()}</span>
+                    </div>
+                    <button className="ml-auto flex items-center justify-center px-4" style={{ height:34, background:`linear-gradient(90deg,${mail.reward.color}33,${mail.reward.color}55,${mail.reward.color}33)`, border:`1px solid ${mail.reward.color}66`, clipPath:"polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%)", filter:`drop-shadow(0 0 6px ${mail.reward.color}33)` }}>
+                      <span style={{ fontSize:10, fontFamily:"'Cinzel',serif", fontWeight:700, color:mail.reward.color, letterSpacing:"0.06em" }}>CLAIM</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Bottom actions */}
+      <div className="relative z-10 flex gap-3 px-4 py-3 flex-shrink-0" style={{ background:"linear-gradient(0deg,#07030e,#09041588)", borderTop:"1px solid #1e143344" }}>
+        <button onClick={deleteRead} className="flex-1 flex items-center justify-center" style={{ height:44, background:"linear-gradient(90deg,#1e0808,#2a0a0a,#1e0808)", border:"1px solid #cc220044", clipPath:"polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%)" }}>
+          <span style={{ fontSize:11, fontFamily:"'Cinzel',serif", fontWeight:700, color:"#cc4422", letterSpacing:"0.07em" }}>DELETE READ</span>
+        </button>
+        <button onClick={claimAll} className="flex-1 flex items-center justify-center" style={{ height:44, background:"linear-gradient(90deg,#0a2a10,#0f3d18,#0a2a10)", border:"1px solid #22dd6e55", clipPath:"polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%)", filter:"drop-shadow(0 0 8px #22dd6e22)" }}>
+          <span style={{ fontSize:11, fontFamily:"'Cinzel',serif", fontWeight:700, color:"#22dd6e", letterSpacing:"0.07em" }}>CLAIM ALL</span>
+        </button>
       </div>
     </div>
   );
@@ -2382,6 +2546,7 @@ export default function App() {
   const [autoMode, setAutoMode] = useState(true);
   const [dmgVisible, setDmgVisible] = useState(true);
   const [showBackpack, setShowBackpack] = useState(false);
+  const [showMailbox,  setShowMailbox]  = useState(false);
 
   useEffect(() => {
     const t = setInterval(() => { setDmgVisible(false); setTimeout(() => setDmgVisible(true), 300); }, 2800);
@@ -2423,6 +2588,7 @@ export default function App() {
         {isGuild && <GuildScreen onBack={() => setActiveNav("battle")}/>}
         {isShop && <ShopScreen onBack={() => setActiveNav("battle")}/>}
         {showBackpack && <BackpackScreen onClose={() => setShowBackpack(false)}/>}
+        {showMailbox  && <MailboxScreen  onClose={() => setShowMailbox(false)}/>}
 
         {!isHeroes && !isDungeon && !isGuild && !isShop && (
           <>
@@ -2522,7 +2688,7 @@ export default function App() {
                 </>
               )}
               {/* Floating right menu — always accessible in main game view */}
-              <FloatingRightMenu onOpenBackpack={() => setShowBackpack(true)}/>
+              <FloatingRightMenu onOpenBackpack={() => setShowBackpack(true)} onOpenMailbox={() => setShowMailbox(true)}/>
             </div>
 
             {/* Skill bar — farming only */}

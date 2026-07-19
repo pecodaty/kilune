@@ -1,8 +1,6 @@
 class_name GuildScreen
 extends Control
-## Full-screen Guild hub and owner of its internal pages.
-
-signal back_requested
+## Shared-shell Guild hub and owner of its internal pages.
 
 var _page: Control
 
@@ -46,11 +44,6 @@ func _build_hub() -> void:
 	status.position = Vector2(64, 31); status.size = Vector2(190, 18); header.add_child(status)
 	var coins := GuildUI.label("◉ 48,360", false, 9, UIPalette.GOLD, HORIZONTAL_ALIGNMENT_CENTER)
 	coins.position = Vector2(size.x - 76, 6); coins.size = Vector2(64, 20); header.add_child(coins)
-	var back := GuildUI.button("Back", 9, Color("#7060A0"))
-	back.position = Vector2(size.x - 62, 33); back.size = Vector2(50, 22)
-	back.pressed.connect(func() -> void: back_requested.emit())
-	header.add_child(back)
-
 	var hall := GuildHallCard.new()
 	hall.position = Vector2(16, 76)
 	hall.size = Vector2(size.x - 32, 190)

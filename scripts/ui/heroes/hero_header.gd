@@ -1,10 +1,8 @@
 class_name HeroHeader
 extends Control
 ## Hero identity header above the Heroes sub-tab content: class avatar, name,
-## stats, and the Back action that returns to battle.
+## class, and stats.
 ## Reference: App.tsx `HeroHeader`.
-
-signal back_pressed
 
 const HEIGHT := 66.0
 
@@ -50,18 +48,6 @@ func _ready() -> void:
 	text_col.add_child(UIFonts.make_label(h["name"], UIFonts.cinzel_bold(), 15, UIPalette.GOLD))
 	text_col.add_child(UIFonts.make_label(HeroData.stats_line(), UIFonts.rajdhani_semibold(), 9, UIPalette.TEXT_CHAT))
 	text_col.add_child(UIFonts.make_label(String(cls["name"]).to_upper(), UIFonts.cinzel(600), 8, cls["color"]))
-
-	var actions := VBoxContainer.new()
-	actions.add_theme_constant_override("separation", 5)
-	actions.alignment = BoxContainer.ALIGNMENT_CENTER
-	actions.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(actions)
-
-	var back := HeroPillBtn.new()
-	back.setup("Back", UIPalette.TEXT_MUTED, 22.0, false, 8)
-	back.pressed.connect(func() -> void: back_pressed.emit())
-	actions.add_child(back)
-
 
 func _draw() -> void:
 	UIDraw.draw_v_gradient_rect(self, Rect2(Vector2.ZERO, size), UIPalette.HUD_TOP, UIPalette.HUD_BOTTOM)

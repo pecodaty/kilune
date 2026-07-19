@@ -15,6 +15,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/shop/shop_screen.tscn" id="13"]
 [ext_resource type="PackedScene" path="res://scenes/ui/gameplay/floating_right_menu.tscn" id="14"]
 [ext_resource type="PackedScene" path="res://scenes/ui/gameplay/backpack_screen.tscn" id="15"]
+[ext_resource type="PackedScene" path="res://scenes/ui/mailbox/mailbox_screen.tscn" id="16"]
 
 [node name="MainGameplayInterface" type="Control" unique_id=2073846664]
 layout_mode = 3
@@ -56,6 +57,16 @@ visible = false
 layout_mode = 2
 size_flags_vertical = 3
 
+[node name="BackpackScreen" parent="SafeAreaContainer/MainColumn" instance=ExtResource("15")]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MailboxScreen" parent="SafeAreaContainer/MainColumn" instance=ExtResource("16")]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+
 [node name="CombatView" parent="SafeAreaContainer/MainColumn" unique_id=1735083902 instance=ExtResource("4")]
 layout_mode = 2
 
@@ -86,15 +97,6 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="FloatingRightMenu" parent="." instance=ExtResource("14")]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="BackpackScreen" parent="." instance=ExtResource("15")]
-visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

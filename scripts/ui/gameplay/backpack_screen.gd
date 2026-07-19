@@ -1,8 +1,6 @@
 class_name BackpackScreen
 extends Control
-## Full-screen inventory overlay opened by the floating quick menu.
-
-signal closed
+## Shared-shell inventory destination opened by the floating quick menu.
 
 const FILTERS := [[&"all","ALL"],[&"materials","MATERIALS"],[&"equipment","EQUIPMENT"],[&"blueprints","BLUEPRINTS"],[&"consumables","CONSUMABLES"],[&"quest","QUEST"],[&"misc","MISC"]]
 const ITEMS := [
@@ -36,6 +34,11 @@ var _sort: StringName = &"type"
 var _sort_open := false
 var _dropdown: Control
 var _filter_scroll_offset := 0
+var _filter_pressing := false
+var _filter_dragging := false
+var _filter_pointer := -1
+var _filter_press_start := Vector2.ZERO
+var _filter_scroll_start := 0
 
 
 func _ready() -> void:
@@ -55,18 +58,62 @@ func _rebuild() -> void:
 
 func _build_header() -> void:
 	_add_label(self,"BACKPACK",true,16,UIPalette.CYAN,Vector2(16,14),Vector2(180,30))
-	_add_label(self,"Capacity %d/100" % ITEMS.size(),false,9,Color("#5A4080"),Vector2(size.x-190,18),Vector2(100,22),HORIZONTAL_ALIGNMENT_RIGHT)
-	var close:=_button("CLOSE",UIPalette.CYAN,UIPalette.CYAN);close.position=Vector2(size.x-82,14);close.size=Vector2(68,30);close.pressed.connect(func()->void:hide();closed.emit());add_child(close)
+	_add_label(self,"Capacity %d/100" % ITEMS.size(),false,9,Color("#5A4080"),Vector2(size.x-166,18),Vector2(150,22),HORIZONTAL_ALIGNMENT_RIGHT)
 
 
 func _build_filters() -> void:
 	var scroll:=ScrollContainer.new();scroll.position=Vector2(12,58);scroll.size=Vector2(size.x-24,56);scroll.clip_contents=true;scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_SHOW_ALWAYS;scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;scroll.scroll_deadzone=4;add_child(scroll)
 	var row:=HBoxContainer.new();row.add_theme_constant_override("separation",6);row.custom_minimum_size=Vector2(570,40);scroll.add_child(row)
 	for data in FILTERS:
-		var id:StringName=data[0];var active:=id==_filter;var button:=_button(data[1],Color("#88BBFF") if active else Color("#4A3068"),Color("#448AFF") if active else Color("#2A1845"));button.custom_minimum_size=Vector2(maxf(58,String(data[1]).length()*7+18),28);button.pressed.connect(func()->void:_filter=id;_sort_open=false;_rebuild());row.add_child(button)
+		var id:StringName=data[0];var active:=id==_filter;var button:=_button(data[1],Color("#88BBFF") if active else Color("#4A3068"),Color("#448AFF") if active else Color("#2A1845"));button.custom_minimum_size=Vector2(maxf(58,String(data[1]).length()*7+18),28);button.mouse_filter=Control.MOUSE_FILTER_IGNORE;row.add_child(button)
 	_style_filter_scrollbar(scroll.get_h_scroll_bar())
 	scroll.get_h_scroll_bar().value_changed.connect(func(value: float) -> void: _filter_scroll_offset=int(value))
 	scroll.set_deferred("scroll_horizontal",_filter_scroll_offset)
+	var gesture:=Control.new();gesture.position=scroll.position;gesture.size=Vector2(scroll.size.x,40);gesture.mouse_filter=Control.MOUSE_FILTER_STOP;gesture.mouse_default_cursor_shape=Control.CURSOR_DRAG;gesture.gui_input.connect(func(event:InputEvent)->void:_on_filter_gesture(event,scroll));add_child(gesture)
+
+
+func _on_filter_gesture(event: InputEvent, scroll: ScrollContainer) -> void:
+	if event is InputEventScreenTouch:
+		if event.pressed:
+			_begin_filter_gesture(event.position,scroll,event.index)
+		elif _filter_pressing and event.index==_filter_pointer:
+			_end_filter_gesture(event.position,scroll)
+	elif event is InputEventScreenDrag and _filter_pressing and event.index==_filter_pointer:
+		_update_filter_gesture(event.position,scroll)
+	elif event is InputEventMouseButton and event.button_index==MOUSE_BUTTON_LEFT:
+		if event.pressed:_begin_filter_gesture(event.position,scroll,-1)
+		elif _filter_pressing and _filter_pointer==-1:_end_filter_gesture(event.position,scroll)
+	elif event is InputEventMouseMotion and _filter_pressing and _filter_pointer==-1:
+		_update_filter_gesture(event.position,scroll)
+
+
+func _begin_filter_gesture(at: Vector2, scroll: ScrollContainer, pointer: int) -> void:
+	_filter_pressing=true;_filter_dragging=false;_filter_pointer=pointer;_filter_press_start=at;_filter_scroll_start=scroll.scroll_horizontal
+
+
+func _update_filter_gesture(at: Vector2, scroll: ScrollContainer) -> void:
+	var delta:=at-_filter_press_start
+	if absf(delta.x)>6.0:_filter_dragging=true
+	if _filter_dragging:
+		scroll.scroll_horizontal=_filter_scroll_start-int(delta.x)
+		_filter_scroll_offset=scroll.scroll_horizontal
+
+
+func _end_filter_gesture(at: Vector2, scroll: ScrollContainer) -> void:
+	if not _filter_dragging:
+		var selected:=_filter_at_x(at.x+scroll.scroll_horizontal)
+		if not selected.is_empty():
+			_filter=selected;_sort_open=false;_filter_pressing=false;_rebuild();return
+	_filter_pressing=false;_filter_dragging=false;_filter_pointer=-1
+
+
+func _filter_at_x(content_x: float) -> StringName:
+	var cursor:=0.0
+	for data in FILTERS:
+		var width:=maxf(58,String(data[1]).length()*7+18)
+		if content_x>=cursor and content_x<=cursor+width:return data[0]
+		cursor+=width+6.0
+	return &""
 
 
 func _build_sort() -> void:

@@ -1,9 +1,6 @@
 class_name TopHud
 extends Control
-## Full-width HUD band: portrait, name + activity timer, HP/MP bars, map/reward.
-
-signal map_open_requested()
-signal rewards_open_requested()
+## Full-width HUD band: portrait, name + activity timer, and HP/MP bars.
 
 @export var hero_name := "FERO":
 	set(v):
@@ -40,8 +37,6 @@ signal rewards_open_requested()
 
 const PORTRAIT_SCENE := preload("res://scenes/ui/gameplay/player_portrait.tscn")
 const STAT_BAR_SCENE := preload("res://scenes/ui/gameplay/stat_bar.tscn")
-const MAP_BUTTON_SCENE := preload("res://scenes/ui/gameplay/map_button.tscn")
-const REWARD_BUTTON_SCENE := preload("res://scenes/ui/gameplay/cap_reward_button.tscn")
 
 var _portrait: PlayerPortrait
 var _name_label: Label
@@ -113,17 +108,6 @@ func _ready() -> void:
 	_mp_bar.label_text = "MP"
 	_mp_bar.bar_color = UIPalette.MP
 	info.add_child(_mp_bar)
-
-	var actions := VBoxContainer.new()
-	actions.add_theme_constant_override("separation", 4)
-	actions.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(actions)
-	var map_button := MAP_BUTTON_SCENE.instantiate()
-	map_button.map_open_requested.connect(func() -> void: map_open_requested.emit())
-	actions.add_child(map_button)
-	var reward_button := REWARD_BUTTON_SCENE.instantiate()
-	reward_button.rewards_open_requested.connect(func() -> void: rewards_open_requested.emit())
-	actions.add_child(reward_button)
 
 	_timer = Timer.new()
 	_timer.wait_time = 1.0

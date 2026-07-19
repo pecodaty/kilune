@@ -8,7 +8,6 @@ extends Control
 
 signal class_equipped(class_id: StringName)
 signal abilities_open_requested(class_id: StringName)
-signal back_requested
 
 ## Until a HeroSystem owns progression, the reference state applies:
 ## Hunter is the equipped class.
@@ -44,7 +43,6 @@ func _ready() -> void:
 	_rail.class_browsed.connect(browse)
 	_info.class_selected.connect(_on_class_selected)
 	_info.abilities_pressed.connect(func() -> void: abilities_open_requested.emit(browsed_class))
-	_header.back_pressed.connect(func() -> void: back_requested.emit())
 	_sub_bar.sub_tab_selected.connect(show_sub_tab)
 	for tab_id in [&"talents", &"equipment", &"cards"]:
 		(_pages[tab_id] as SubTabPage).modal_requested.connect(_modal.show_payload)

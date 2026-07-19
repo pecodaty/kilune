@@ -60,6 +60,17 @@ Economy and Collection systems own those operations.
 The floating right menu is a reusable root overlay shown over the regular main
 game/Battle content and hidden for dedicated Heroes, Dungeon, Guild, and Shop
 destinations. It owns only collapsed/expanded presentation and emits Bag, Mail,
-Map, and Config actions. Bag opens a separate full-screen `BackpackScreen` above
-the shared shell. Backpack owns filtering and display sorting; inventory data and
-mutations remain the responsibility of the future Inventory system.
+Map, and Config actions. Bag opens `BackpackScreen` inside the shared content
+column, with the persistent bottom navigation as its only outward navigation;
+Backpack has no local Close action. Backpack owns filtering and display sorting;
+inventory data and mutations remain the responsibility of the future Inventory
+system.
+
+## Global versus nested navigation controls
+
+Top-level destinations do not expose local Back buttons; users move between
+Home, Heroes, Battle, Guild, Shop, and Backpack through the persistent bottom
+navigation. Back/close controls are reserved for nested pages that must return
+to a parent inside the same destination, such as Guild Boss returning to the
+Guild hub or Dungeon level selection returning to the Dungeon list. The former
+CAP Reward HUD shortcut is not part of the global HUD.
