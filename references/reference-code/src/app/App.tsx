@@ -264,7 +264,7 @@ function StatRow({ label, value, valueColor = "#e8d8ff" }: { label: string; valu
 
 // ─── ITEM TILE ────────────────────────────────────────────────────────────────
 function ItemTile({ item, onClick, selected }: { item: InventoryItem; onClick: () => void; selected?: boolean }) {
-  const rc = RARITY_COLOR[item.rarity];
+  const rc = BP_RARITY_COLOR[item.rarity];
   return (
     <button onClick={onClick} className="relative flex items-center gap-2 w-full" style={{ height: 52, padding: "0 8px", background: selected ? "#12093299" : "#0a0720", border: `1px solid ${selected ? rc + "88" : "#2a184555"}`, clipPath: "polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%)", filter: selected ? `drop-shadow(0 0 6px ${rc}33)` : undefined, transition: "all 0.15s" }}>
       <div style={{ position: "absolute", left: 0, top: 6, bottom: 6, width: 2, background: rc, borderRadius: 1 }}/>
@@ -483,7 +483,7 @@ function EquipmentTab({ onModal }: { onModal: (p: ModalPayload) => void }) {
         <p style={{ fontSize: 8, color: "#5a4080", fontFamily: "'Rajdhani',sans-serif", fontWeight: 700, letterSpacing: "0.05em", marginBottom: 8 }}>EQUIPPED GEAR</p>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 5, marginBottom: 14 }}>
           {GEAR_SLOTS.map(slot => {
-            const item = getItem(slot.item); const rc = item ? RARITY_COLOR[item.rarity] : "#2a1845"; const isSelected = selectedSlot === slot.id;
+            const item = getItem(slot.item); const rc = item ? BP_RARITY_COLOR[item.rarity] : "#2a1845"; const isSelected = selectedSlot === slot.id;
             return item ? (
               <button key={slot.id} onClick={() => { setSelectedSlot(slot.id); onModal({ type: "item", data: item }); }} className="relative flex flex-col items-center justify-center gap-0.5 py-1.5" style={{ background: isSelected ? "#12093299" : "#0a0720", border: `1px solid ${isSelected ? rc + "88" : rc + "33"}`, clipPath: "polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%)", filter: isSelected ? `drop-shadow(0 0 5px ${rc}33)` : undefined }}>
                 <div style={{ width: 2, height: "60%", position: "absolute", left: 0, top: "20%", background: rc, opacity: 0.7 }}/>
@@ -515,7 +515,7 @@ function CardsTab({ onModal }: { onModal: (p: ModalPayload) => void }) {
         <SectionTitle>EQUIPMENT CARDS</SectionTitle>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 5 }}>
           {INVENTORY.map(item => {
-            const rc = RARITY_COLOR[item.rarity]; const isSelected = selectedCard === item.id;
+            const rc = BP_RARITY_COLOR[item.rarity]; const isSelected = selectedCard === item.id;
             return (
               <button key={item.id} onClick={() => { setSelectedCard(item.id); onModal({ type: "item", data: item }); }} className="relative flex flex-col items-center justify-center gap-1 py-2.5 px-1" style={{ background: isSelected ? "#12093299" : "#0a0720", border: `1px solid ${isSelected ? rc + "99" : rc + "33"}`, clipPath: "polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%)", filter: isSelected ? `drop-shadow(0 0 8px ${rc}44)` : undefined, transition: "all 0.15s" }}>
                 {isSelected && <div style={{ position: "absolute", top: 0, left: 8, right: 8, height: 1, background: `linear-gradient(90deg,transparent,${rc}88,transparent)` }}/>}
@@ -1002,6 +1002,251 @@ function DungeonScreen({ onClose }: { onClose: () => void }) {
           onLeave={() => { setShowLeave(false); setView("list"); }}
           onCancel={() => setShowLeave(false)}/>
       )}
+    </div>
+  );
+}
+
+// ─── BACKPACK DATA ────────────────────────────────────────────────────────────
+type BpCategory = "all" | "materials" | "equipment" | "blueprints" | "consumables" | "quest" | "misc";
+type BpRarity   = "common" | "uncommon" | "rare" | "epic" | "legendary";
+type SortKey    = "type" | "rarity" | "name";
+
+interface BpItem {
+  id: string; name: string; icon: string; category: Exclude<BpCategory,"all">;
+  qty: number; rarity: BpRarity; equipped?: boolean; equippedLevel?: number;
+}
+
+const BP_RARITY_COLOR: Record<BpRarity, string> = {
+  common:    "#3d2860",
+  uncommon:  "#1a4228",
+  rare:      "#102244",
+  epic:      "#2a0e50",
+  legendary: "#2a1800",
+};
+const BP_RARITY_BORDER: Record<BpRarity, string> = {
+  common:    "#5a4080",
+  uncommon:  "#22dd6e",
+  rare:      "#448aff",
+  epic:      "#aa44ff",
+  legendary: "#ffd700",
+};
+
+const BACKPACK_ITEMS: BpItem[] = [
+  { id:"m1",  name:"Ancient Thread",  icon:"🧵", category:"materials",   qty:5,   rarity:"common"    },
+  { id:"m2",  name:"Arcane Dust",     icon:"✨", category:"materials",   qty:909, rarity:"uncommon"  },
+  { id:"m3",  name:"Beast Leather",   icon:"🦎", category:"materials",   qty:8,   rarity:"common"    },
+  { id:"m4",  name:"Celestial Dust",  icon:"🌟", category:"materials",   qty:99,  rarity:"rare"      },
+  { id:"m5",  name:"Hardwood",        icon:"🪵", category:"materials",   qty:12,  rarity:"common"    },
+  { id:"m6",  name:"Iron Ore",        icon:"⛏️", category:"materials",   qty:20,  rarity:"common"    },
+  { id:"m7",  name:"Moonsteel",       icon:"🌙", category:"materials",   qty:99,  rarity:"rare"      },
+  { id:"m8",  name:"Royal Leather",   icon:"👑", category:"materials",   qty:4,   rarity:"uncommon"  },
+  { id:"m9",  name:"Spirit Gem",      icon:"💠", category:"materials",   qty:3,   rarity:"epic"      },
+  { id:"m10", name:"Star Crystal",    icon:"💫", category:"materials",   qty:2,   rarity:"legendary" },
+  { id:"m11", name:"Thread",          icon:"🪡", category:"materials",   qty:12,  rarity:"common"    },
+  { id:"e1",  name:"Bulwark Band",    icon:"💍", category:"equipment",   qty:1,   rarity:"rare",    equipped:true,  equippedLevel:1 },
+  { id:"e2",  name:"Ember Signet",    icon:"🔶", category:"equipment",   qty:1,   rarity:"epic",    equipped:true,  equippedLevel:1 },
+  { id:"e3",  name:"Sunstep Shoes",   icon:"👟", category:"equipment",   qty:1,   rarity:"uncommon",equipped:false, equippedLevel:2 },
+  { id:"e4",  name:"Trailguard Armor",icon:"🛡️", category:"equipment",   qty:1,   rarity:"rare",    equipped:true,  equippedLevel:3 },
+  { id:"b1",  name:"Ember Signet BP", icon:"📋", category:"blueprints",  qty:1,   rarity:"uncommon"  },
+  { id:"b2",  name:"Moonveil Cap BP", icon:"📋", category:"blueprints",  qty:1,   rarity:"uncommon"  },
+  { id:"b3",  name:"Oracle Necklace BP",icon:"📋",category:"blueprints", qty:1,   rarity:"rare"      },
+  { id:"b4",  name:"Vanguard Cleaver BP",icon:"📋",category:"blueprints",qty:1,   rarity:"epic"      },
+  { id:"c1",  name:"Health Potion",   icon:"🧪", category:"consumables", qty:14,  rarity:"common"    },
+  { id:"c2",  name:"Mana Crystal",    icon:"🔮", category:"consumables", qty:6,   rarity:"uncommon"  },
+  { id:"q1",  name:"Lost Seal",       icon:"🔏", category:"quest",       qty:1,   rarity:"rare"      },
+  { id:"x1",  name:"Token of Valor",  icon:"🎖️", category:"misc",        qty:3,   rarity:"uncommon"  },
+];
+const BACKPACK_CAPACITY = 100;
+
+// ─── BACKPACK SCREEN ──────────────────────────────────────────────────────────
+function BackpackScreen({ onClose }: { onClose: () => void }) {
+  const [activeFilter, setActiveFilter] = useState<BpCategory>("all");
+  const [sortKey, setSortKey]           = useState<SortKey>("type");
+  const [sortOpen, setSortOpen]         = useState(false);
+
+  const filters: { id: BpCategory; label: string }[] = [
+    { id:"all",          label:"All"          },
+    { id:"materials",    label:"Materials"    },
+    { id:"equipment",    label:"Equipment"    },
+    { id:"blueprints",   label:"Blueprints"   },
+    { id:"consumables",  label:"Consumables"  },
+    { id:"quest",        label:"Quest"        },
+    { id:"misc",         label:"Misc"         },
+  ];
+
+  const sortOptions: { id: SortKey; label: string }[] = [
+    { id:"type",  label:"Type"  },
+    { id:"rarity",label:"Rarity"},
+    { id:"name",  label:"Name"  },
+  ];
+
+  const filtered = BACKPACK_ITEMS.filter(i => activeFilter === "all" || i.category === activeFilter);
+  const sorted = [...filtered].sort((a,b) => {
+    if (sortKey === "name")   return a.name.localeCompare(b.name);
+    if (sortKey === "rarity") {
+      const order = ["legendary","epic","rare","uncommon","common"];
+      return order.indexOf(a.rarity) - order.indexOf(b.rarity);
+    }
+    return a.category.localeCompare(b.category);
+  });
+
+  return (
+    <div className="absolute inset-0 z-40 flex flex-col" style={{ background:"linear-gradient(180deg,#06030f 0%,#09041a 100%)" }}>
+      {/* Ornate outer border glow */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 390 844" preserveAspectRatio="none" style={{ zIndex:0 }}>
+        <defs>
+          <linearGradient id="bp-frame-v" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#00e5c8" stopOpacity="0.55"/>
+            <stop offset="50%" stopColor="#aa44ff" stopOpacity="0.3"/>
+            <stop offset="100%" stopColor="#00e5c8" stopOpacity="0.55"/>
+          </linearGradient>
+          <linearGradient id="bp-frame-h" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#00e5c8" stopOpacity="0.55"/>
+            <stop offset="50%" stopColor="#aa44ff" stopOpacity="0.3"/>
+            <stop offset="100%" stopColor="#00e5c8" stopOpacity="0.55"/>
+          </linearGradient>
+        </defs>
+        {/* Corner accents */}
+        <polyline points="0,30 0,2 30,2"   fill="none" stroke="#00e5c8" strokeWidth="2" opacity="0.8"/>
+        <polyline points="360,2 390,2 390,30"  fill="none" stroke="#00e5c8" strokeWidth="2" opacity="0.8"/>
+        <polyline points="0,814 0,842 30,842"  fill="none" stroke="#00e5c8" strokeWidth="2" opacity="0.8"/>
+        <polyline points="360,842 390,842 390,814" fill="none" stroke="#00e5c8" strokeWidth="2" opacity="0.8"/>
+        {/* Side lines */}
+        <line x1="1" y1="32" x2="1" y2="812" stroke="url(#bp-frame-v)" strokeWidth="1.5"/>
+        <line x1="389" y1="32" x2="389" y2="812" stroke="url(#bp-frame-v)" strokeWidth="1.5"/>
+        <line x1="32" y1="1" x2="358" y2="1" stroke="url(#bp-frame-h)" strokeWidth="1.5"/>
+        <line x1="32" y1="843" x2="358" y2="843" stroke="url(#bp-frame-h)" strokeWidth="1.5"/>
+        {/* Diamond crown */}
+        <polygon points="195,0 202,9 195,6 188,9" fill="#00e5c8" opacity="0.9"/>
+        <ellipse cx="195" cy="6" rx="16" ry="5" fill="#00e5c8" opacity="0.08"/>
+      </svg>
+
+      {/* Header */}
+      <div className="relative z-10 flex items-center px-4 flex-shrink-0" style={{ height:58, borderBottom:"1px solid #00e5c822" }}>
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 390 58" preserveAspectRatio="none">
+          <defs><linearGradient id="bp-hdr" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#0d0825"/><stop offset="100%" stopColor="#090418"/></linearGradient></defs>
+          <rect width="390" height="58" fill="url(#bp-hdr)"/>
+          <path d="M 0 58 Q 195 36 390 58" fill="none" stroke="#00e5c8" strokeWidth="0.8" opacity="0.3"/>
+        </svg>
+        <span style={{ fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:16, color:"#00e5c8", letterSpacing:"0.09em", textShadow:"0 0 16px #00e5c844", flex:1, position:"relative" }}>BACKPACK</span>
+        <span style={{ fontSize:9, color:"#5a4080", fontFamily:"'Rajdhani',sans-serif", fontWeight:600, position:"relative", marginRight:12 }}>Capacity {BACKPACK_ITEMS.length}/{BACKPACK_CAPACITY}</span>
+        <button onClick={onClose} className="relative flex items-center justify-center px-3" style={{ height:26, background:"#0d0825", border:"1px solid #00e5c833", clipPath:"polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%)" }}>
+          <span style={{ fontSize:9.5, fontFamily:"'Cinzel',serif", fontWeight:700, color:"#00e5c8", letterSpacing:"0.08em" }}>CLOSE</span>
+        </button>
+      </div>
+
+      {/* Filter tabs — horizontal scroll */}
+      <div className="relative z-10 flex flex-shrink-0 overflow-x-auto px-3 gap-1.5 py-2" style={{ scrollbarWidth:"none", borderBottom:"1px solid #1a0e3344" }}>
+        {filters.map(f => (
+          <button key={f.id} onClick={() => setActiveFilter(f.id)} className="flex-shrink-0 flex items-center justify-center px-3" style={{ height:26, background:activeFilter===f.id?"linear-gradient(90deg,#0d1e44,#162a5a,#0d1e44)":"#0a0820", border:`1px solid ${activeFilter===f.id?"#448aff66":"#2a184544"}`, clipPath:"polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)", filter:activeFilter===f.id?"drop-shadow(0 0 4px #448aff33)":undefined, whiteSpace:"nowrap" }}>
+            <span style={{ fontSize:9, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:activeFilter===f.id?"#88bbff":"#3a2858", letterSpacing:"0.05em" }}>{f.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Sort row + dropdown — rendered as a single stacking layer above the scroll area */}
+      <div className="relative flex-shrink-0" style={{ zIndex:60, borderBottom:"1px solid #1a0e3322" }}>
+        <div className="flex items-center gap-2 px-3 py-1.5">
+          <span style={{ fontSize:9, color:"#3a2858", fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>Sort</span>
+          <button onClick={() => setSortOpen(o => !o)} className="flex items-center gap-1.5 px-2.5" style={{ height:22, background:"#0a0820", border:"1px solid #3a206055", clipPath:"polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)" }}>
+            <span style={{ fontSize:9, color:"#6050a0", fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>{sortOptions.find(s=>s.id===sortKey)?.label}</span>
+            <span style={{ fontSize:7, color:"#3a2858" }}>{sortOpen?"▲":"▼"}</span>
+          </button>
+          <span style={{ marginLeft:"auto", fontSize:8.5, color:"#3a2858", fontFamily:"'Rajdhani',sans-serif", fontWeight:600 }}>{sorted.length} items</span>
+        </div>
+        {/* Dropdown rendered inside the sort row's stacking context, not inside the scroll container */}
+        {sortOpen && (
+          <div className="absolute flex flex-col" style={{ left:44, top:"100%", zIndex:999, background:"#0d0825", border:"1px solid #3a206088", minWidth:90, boxShadow:"0 8px 24px #000000cc" }}>
+            {sortOptions.map(s => (
+              <button key={s.id} onClick={() => { setSortKey(s.id); setSortOpen(false); }} className="flex items-center px-3" style={{ height:30, background:sortKey===s.id?"#1a1040":"transparent", borderBottom:"1px solid #1e143322" }}>
+                <span style={{ fontSize:10, color:sortKey===s.id?"#00e5c8":"#6050a0", fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>{s.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Item grid */}
+      <div className="relative flex-1 overflow-y-auto px-3 py-2" style={{ scrollbarWidth:"none", zIndex:10 }} onClick={() => sortOpen && setSortOpen(false)}>
+        {sorted.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full gap-3">
+            <span style={{ fontSize:48, filter:"drop-shadow(0 0 12px #3d206044)", opacity:0.3 }}>🎒</span>
+            <span style={{ fontSize:11, color:"#2a1845", fontFamily:"'Cinzel',serif", fontWeight:700, letterSpacing:"0.08em" }}>EMPTY</span>
+          </div>
+        ) : (
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:7 }}>
+            {sorted.map(item => (
+              <div key={item.id} className="relative flex flex-col items-center gap-1 px-1 py-2" style={{ background:BP_RARITY_COLOR[item.rarity], border:`1px solid ${BP_RARITY_BORDER[item.rarity]}66`, clipPath:"polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%)" }}>
+                {/* Shimmer top */}
+                <div style={{ position:"absolute", top:0, left:8, right:8, height:1, background:`linear-gradient(90deg,transparent,${BP_RARITY_BORDER[item.rarity]}66,transparent)` }}/>
+                {/* Equipped badge */}
+                {item.equipped && (
+                  <div style={{ position:"absolute", top:2, right:2, padding:"1px 4px", background:"#00e5c822", border:"1px solid #00e5c844", borderRadius:2 }}>
+                    <span style={{ fontSize:6, color:"#00e5c8", fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>EQ</span>
+                  </div>
+                )}
+                {/* Icon */}
+                <div className="relative flex items-center justify-center" style={{ width:42, height:42, background:`${BP_RARITY_BORDER[item.rarity]}18`, border:`1px solid ${BP_RARITY_BORDER[item.rarity]}33`, clipPath:"polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%)" }}>
+                  <span style={{ fontSize:22, filter:`drop-shadow(0 0 5px ${BP_RARITY_BORDER[item.rarity]}44)` }}>{item.icon}</span>
+                  {/* Quantity badge */}
+                  {item.qty > 1 && (
+                    <div style={{ position:"absolute", bottom:-1, right:-1, padding:"0px 3px", background:"#0a0820ee", border:`1px solid ${BP_RARITY_BORDER[item.rarity]}55` }}>
+                      <span style={{ fontSize:7, color:BP_RARITY_BORDER[item.rarity], fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>×{item.qty}</span>
+                    </div>
+                  )}
+                </div>
+                {/* Name */}
+                <span style={{ fontSize:8, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:"#c8b8e8", textAlign:"center", lineHeight:1.2, padding:"0 2px" }}>{item.name}</span>
+                {/* Equipment level */}
+                {item.category === "equipment" && item.equippedLevel !== undefined && (
+                  <span style={{ fontSize:7, color:item.equipped?"#00e5c8":"#5a4080", fontFamily:"'Rajdhani',sans-serif", fontWeight:600 }}>
+                    {item.equipped ? `Lv.${item.equippedLevel} - Equipped` : `Lv.${item.equippedLevel}`}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── FLOATING RIGHT MENU ──────────────────────────────────────────────────────
+function FloatingRightMenu({ onOpenBackpack }: { onOpenBackpack: () => void }) {
+  const [open, setOpen] = useState(false);
+  const buttons = [
+    { icon:"🎒", label:"Bag",    action: onOpenBackpack,           color:"#00e5c8" },
+    { icon:"📬", label:"Mail",   action: () => {},                 color:"#ffd700" },
+    { icon:"🗺️", label:"Map",    action: () => {},                 color:"#22dd6e" },
+    { icon:"⚙️", label:"Config", action: () => {},                 color:"#aa44ff" },
+  ];
+  return (
+    <div className="absolute flex flex-col items-end" style={{ right:0, top:"28%", zIndex:25, pointerEvents:"auto" }}>
+      {/* Toggle tab — always on top, never covered */}
+      <button onClick={() => setOpen(o => !o)} style={{ width:20, height:44, background:"linear-gradient(180deg,#0d0825,#100a30)", border:"1px solid #00e5c855", borderRight:"none", clipPath:"polygon(0% 6px,100% 0%,100% 100%,0% calc(100% - 6px))", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:6 }}>
+        <span style={{ fontSize:9, color:"#00e5c8", lineHeight:1 }}>{open?"▶":"◀"}</span>
+      </button>
+      {/* Action buttons — slide in/out below the toggle */}
+      <div className="flex flex-col gap-2 items-end overflow-hidden" style={{ paddingRight:0 }}>
+        {buttons.map((btn, i) => (
+          <div key={btn.label} className="flex items-center gap-1" style={{
+            transform: open ? "translateX(0)" : "translateX(80px)",
+            transition: `transform ${0.10 + i * 0.055}s cubic-bezier(0.22,1,0.36,1)`,
+            opacity: open ? 1 : 0,
+            pointerEvents: open ? "auto" : "none",
+          }}>
+            {/* Label chip */}
+            <div style={{ padding:"2px 7px", background:"#0a0820cc", border:`1px solid ${btn.color}33`, clipPath:"polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)", opacity: open ? 1 : 0, transition:"opacity 0.15s" }}>
+              <span style={{ fontSize:7.5, color:btn.color, fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>{btn.label}</span>
+            </div>
+            {/* Icon button */}
+            <button onClick={btn.action} className="flex items-center justify-center flex-shrink-0" style={{ width:36, height:36, background:`linear-gradient(135deg,#0d0825,#160e3a)`, border:`1px solid ${btn.color}55`, clipPath:"polygon(6px 0%,100% 0%,100% 100%,0% 100%)", filter:`drop-shadow(0 2px 6px ${btn.color}22)` }}>
+              <span style={{ fontSize:17, filter:`drop-shadow(0 0 4px ${btn.color}66)` }}>{btn.icon}</span>
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -2136,6 +2381,7 @@ export default function App() {
   const [battleView, setBattleView] = useState<BattleView>("farming");
   const [autoMode, setAutoMode] = useState(true);
   const [dmgVisible, setDmgVisible] = useState(true);
+  const [showBackpack, setShowBackpack] = useState(false);
 
   useEffect(() => {
     const t = setInterval(() => { setDmgVisible(false); setTimeout(() => setDmgVisible(true), 300); }, 2800);
@@ -2176,6 +2422,7 @@ export default function App() {
         {isDungeon && <DungeonScreen onClose={() => setBattleView("lobby")}/>}
         {isGuild && <GuildScreen onBack={() => setActiveNav("battle")}/>}
         {isShop && <ShopScreen onBack={() => setActiveNav("battle")}/>}
+        {showBackpack && <BackpackScreen onClose={() => setShowBackpack(false)}/>}
 
         {!isHeroes && !isDungeon && !isGuild && !isShop && (
           <>
@@ -2274,6 +2521,8 @@ export default function App() {
                   )}
                 </>
               )}
+              {/* Floating right menu — always accessible in main game view */}
+              <FloatingRightMenu onOpenBackpack={() => setShowBackpack(true)}/>
             </div>
 
             {/* Skill bar — farming only */}

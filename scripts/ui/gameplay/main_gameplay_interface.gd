@@ -3,6 +3,8 @@ extends Control
 ## Top-level composition of the main gameplay screen.
 ## Owns no visuals: wires child signals to game systems and applies safe areas.
 
+signal quick_action_requested(action_id: StringName)
+
 @onready var _safe_area: MarginContainer = $SafeAreaContainer
 @onready var _top_hud: TopHud = $SafeAreaContainer/MainColumn/TopHud
 @onready var _stage_plaque: StagePlaque = $SafeAreaContainer/MainColumn/StagePlaque
@@ -16,6 +18,8 @@ extends Control
 @onready var _dungeon_flow: DungeonFlow = $DungeonFlow
 @onready var _guild_screen: GuildScreen = $SafeAreaContainer/MainColumn/GuildScreen
 @onready var _shop_screen: ShopScreen = $SafeAreaContainer/MainColumn/ShopScreen
+@onready var _floating_menu: FloatingRightMenu = $FloatingRightMenu
+@onready var _backpack_screen: BackpackScreen = $BackpackScreen
 
 const HEROES_PLAQUE := "Heroes · Class Selection"
 const BATTLE_MODES_PLAQUE := "Battle Modes"
@@ -39,6 +43,10 @@ func _ready() -> void:
 	_dungeon_flow.closed.connect(_show_battle_lobby)
 	_guild_screen.back_requested.connect(_on_guild_back_requested)
 	_shop_screen.back_requested.connect(_on_shop_back_requested)
+	_floating_menu.backpack_requested.connect(_open_backpack)
+	_floating_menu.mail_requested.connect(func() -> void: quick_action_requested.emit(&"mail"))
+	_floating_menu.map_requested.connect(_on_map_open_requested)
+	_floating_menu.config_requested.connect(func() -> void: quick_action_requested.emit(&"config"))
 	queue_redraw()
 
 
@@ -133,6 +141,8 @@ func _set_shell_visibility(farming: bool, lobby: bool, heroes: bool, guild: bool
 	_chat_strip.visible = farming
 	$SafeAreaContainer/MainColumn/NavDivider.visible = farming or heroes or guild or shop
 	_bottom_nav.visible = true
+	_floating_menu.visible = farming or lobby
+	if not _floating_menu.visible: _floating_menu.close()
 
 
 func _capture_battle_plaque() -> void:
@@ -143,6 +153,7 @@ func _capture_battle_plaque() -> void:
 func _on_dungeons_requested() -> void:
 	_safe_area.visible = false
 	_guild_screen.visible = false
+	_floating_menu.visible = false
 	_dungeon_flow.visible = true
 	_dungeon_flow.open()
 
@@ -167,6 +178,10 @@ func _on_guild_back_requested() -> void:
 func _on_shop_back_requested() -> void:
 	_bottom_nav.active_tab = &"battle"
 	_show_farming()
+
+
+func _open_backpack() -> void:
+	_backpack_screen.open()
 
 
 func _on_chat_open_requested() -> void:

@@ -54,3 +54,12 @@ selected on Shop. `ShopScreen` owns the Supply, Limited, Outfit, Bundle, and
 Gacha presentation states. Purchase, outfit-equip, and summon actions emit
 signals; the UI does not mutate balances, inventory, or progression until the
 Economy and Collection systems own those operations.
+
+## Floating quick menu and Backpack ownership
+
+The floating right menu is a reusable root overlay shown over the regular main
+game/Battle content and hidden for dedicated Heroes, Dungeon, Guild, and Shop
+destinations. It owns only collapsed/expanded presentation and emits Bag, Mail,
+Map, and Config actions. Bag opens a separate full-screen `BackpackScreen` above
+the shared shell. Backpack owns filtering and display sorting; inventory data and
+mutations remain the responsibility of the future Inventory system.
