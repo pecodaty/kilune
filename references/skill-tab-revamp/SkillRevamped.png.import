@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bejvdkan48ing"
-path="res://.godot/imported/GuildShop.png-f66874a89b4121596243991bcf8875f1.ctex"
+uid="uid://co31186okjrtv"
+path="res://.godot/imported/SkillRevamped.png-230aa0f4552440e1b9b938a45ddc050f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://references/reference-code/src/imports/GuildShop.png"
-dest_files=["res://.godot/imported/GuildShop.png-f66874a89b4121596243991bcf8875f1.ctex"]
+source_file="res://references/skill-tab-revamp/SkillRevamped.png"
+dest_files=["res://.godot/imported/SkillRevamped.png-230aa0f4552440e1b9b938a45ddc050f.ctex"]
 
 [params]
 

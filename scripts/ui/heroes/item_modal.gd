@@ -189,8 +189,14 @@ func _build_actions(actions: Array, accent: Color) -> void:
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_stack.add_child(row)
 	for i in range(actions.size()):
-		var btn := SkillsTab.ActionBtn.new()
-		btn.setup(actions[i], accent if i == 0 else UIPalette.TEXT_CHAT, i == 0)
+		var btn := ArcaneButton.new()
+		btn.text = actions[i]
+		btn.fill_top = Color("#0A1535") if i == 0 else Color("#0A0720")
+		btn.fill_bottom = Color("#0D1A40") if i == 0 else Color("#080618")
+		btn.border_color = Color(accent, 0.55 if i == 0 else 0.3)
+		btn.add_theme_font_override("font", UIFonts.rajdhani_bold())
+		btn.add_theme_font_size_override("font_size", 9)
+		btn.add_theme_color_override("font_color", accent if i == 0 else UIPalette.TEXT_CHAT)
 		btn.pressed.connect(func() -> void: action_pressed.emit(actions[i]))
 		row.add_child(btn)
 		btn.custom_minimum_size.y = 30.0

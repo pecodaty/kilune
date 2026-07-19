@@ -44,7 +44,7 @@ func _ready() -> void:
 	_info.class_selected.connect(_on_class_selected)
 	_info.abilities_pressed.connect(func() -> void: abilities_open_requested.emit(browsed_class))
 	_sub_bar.sub_tab_selected.connect(show_sub_tab)
-	for tab_id in [&"talents", &"equipment", &"cards"]:
+	for tab_id in [&"equipment", &"cards"]:
 		(_pages[tab_id] as SubTabPage).modal_requested.connect(_modal.show_payload)
 	_apply_state()
 

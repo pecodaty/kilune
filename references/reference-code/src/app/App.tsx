@@ -381,93 +381,550 @@ function ClassTab() {
   );
 }
 
+// ─── SKILL & TALENT SYSTEM DATA ──────────────────────────────────────────────
+const CHAR_LV = 32;
+const SKILL_POINTS_TOTAL = CHAR_LV;
+const TALENT_POINTS_TOTAL = CHAR_LV;
+
+interface ActiveSkill {
+  id: string; name: string; icon: string;
+  source: "path1"|"path2"|"spec1"|"spec2";
+  sourceColor: string; desc: string;
+  level: number; mastery: number;
+}
+const SOURCE_META = {
+  path1: { label:"Path of the Storm",   color:"#22dd6e", unlockLv:1  },
+  path2: { label:"Path of Judgment",    color:"#ff7733", unlockLv:50 },
+  spec1: { label:"Arcane Conclave",     color:"#448aff", unlockLv:30 },
+  spec2: { label:"Void Covenant",       color:"#aa44ff", unlockLv:70 },
+} as const;
+function skillLvReq(lv: number): number {
+  if (lv <= 3) return 0; if (lv <= 5) return 20;
+  if (lv <= 7) return 40; if (lv <= 9) return 60;
+  return lv === 10 ? 80 : 90;
+}
+const SKILLS_INIT: ActiveSkill[] = [
+  { id:"searing_bolt", name:"Searing Bolt",   icon:"🔥", source:"path1", sourceColor:"#22dd6e", desc:"A blazing bolt that burns the target, dealing fire damage over time.",               level:5, mastery:0 },
+  { id:"frost_shield", name:"Frost Shield",   icon:"❄️", source:"path1", sourceColor:"#22dd6e", desc:"Conjures an ice barrier that absorbs damage and slows attackers.",                   level:3, mastery:0 },
+  { id:"wind_slash",   name:"Wind Slash",     icon:"🌪️", source:"path1", sourceColor:"#22dd6e", desc:"Releases a cutting wind arc that strikes all enemies in its path.",                  level:2, mastery:0 },
+  { id:"shadow_step",  name:"Shadow Step",    icon:"🌑", source:"path1", sourceColor:"#22dd6e", desc:"Vanishes in shadow and reappears at target location, evading all attacks.",           level:0, mastery:0 },
+  { id:"thunder_clap", name:"Thunder Clap",   icon:"⚡", source:"path2", sourceColor:"#ff7733", desc:"Slams down with lightning force, stunning nearby enemies briefly.",                   level:0, mastery:0 },
+  { id:"void_surge",   name:"Void Surge",     icon:"🌀", source:"path2", sourceColor:"#ff7733", desc:"Channels void energy into a devastating beam of pure darkness.",                     level:0, mastery:0 },
+  { id:"ember_nova",   name:"Ember Nova",     icon:"💫", source:"path2", sourceColor:"#ff7733", desc:"Detonates a wave of superheated embers in all directions.",                         level:0, mastery:0 },
+  { id:"iron_will",    name:"Iron Will",      icon:"🪨", source:"path2", sourceColor:"#ff7733", desc:"Enters a fortified stance, greatly reducing all incoming damage.",                   level:0, mastery:0 },
+  { id:"arcane_burst", name:"Arcane Burst",   icon:"💠", source:"spec1", sourceColor:"#448aff", desc:"Releases pure arcane force that bypasses magic resistance.",                         level:3, mastery:1 },
+  { id:"mana_shield",  name:"Mana Shield",    icon:"🔮", source:"spec1", sourceColor:"#448aff", desc:"Sacrifices mana to absorb incoming damage before HP is affected.",                  level:1, mastery:0 },
+  { id:"crystal_ward", name:"Crystal Ward",   icon:"💎", source:"spec1", sourceColor:"#448aff", desc:"Summons crystalline shards that orbit and block projectiles.",                      level:0, mastery:0 },
+  { id:"phase_shift",  name:"Phase Shift",    icon:"✨", source:"spec1", sourceColor:"#448aff", desc:"Temporarily phases out of reality, becoming untargetable for 1.5s.",                level:0, mastery:0 },
+  { id:"soul_rend",    name:"Soul Rend",      icon:"💀", source:"spec2", sourceColor:"#aa44ff", desc:"Tears at the soul dealing true damage and reducing the target's healing.",           level:0, mastery:0 },
+  { id:"blood_pact",   name:"Blood Pact",     icon:"🔴", source:"spec2", sourceColor:"#aa44ff", desc:"Sacrifices health to amplify skill damage by 40% for 4 seconds.",                  level:0, mastery:0 },
+  { id:"rift_step",    name:"Rift Step",      icon:"🌌", source:"spec2", sourceColor:"#aa44ff", desc:"Tears a dimensional rift at target, pulling in and damaging nearby foes.",           level:0, mastery:0 },
+  { id:"null_zone",    name:"Null Zone",      icon:"⬛", source:"spec2", sourceColor:"#aa44ff", desc:"Creates a suppression field that disables enemy skills and regeneration.",           level:0, mastery:0 },
+];
+const EQUIPPED_INIT: (string|null)[] = ["searing_bolt","frost_shield","wind_slash","arcane_burst","mana_shield",null];
+
+interface TalentNode2 {
+  id: string; name: string; icon: string;
+  type: "passive"|"utility"|"keystone";
+  section: "path1"|"path2"|"spec1"|"spec2";
+  rank: number; maxRank: number; bonus: string; color: string;
+}
+const TALENT_SECTIONS = {
+  path1: { label:"Path of the Storm",  color:"#22dd6e", unlockLv:1,  nodes:12 },
+  path2: { label:"Path of Judgment",   color:"#ff7733", unlockLv:50, nodes:12 },
+  spec1: { label:"Arcane Conclave",    color:"#448aff", unlockLv:30, nodes:8  },
+  spec2: { label:"Void Covenant",      color:"#aa44ff", unlockLv:70, nodes:8  },
+} as const;
+type TalentSection = keyof typeof TALENT_SECTIONS;
+const TALENTS2_INIT: TalentNode2[] = [
+  // Path 1 — 12 nodes
+  { id:"t_vit",   name:"Vitality Core",     icon:"💚", type:"passive",  section:"path1", rank:3, maxRank:5, bonus:"+5% Max HP per rank",            color:"#22dd6e" },
+  { id:"t_bh",    name:"Battle Hardened",   icon:"🛡️", type:"passive",  section:"path1", rank:2, maxRank:5, bonus:"+3% Defense per rank",           color:"#22dd6e" },
+  { id:"t_swift", name:"Swift Strikes",     icon:"⚡", type:"passive",  section:"path1", rank:1, maxRank:5, bonus:"+2% Attack Speed per rank",      color:"#22dd6e" },
+  { id:"t_pow",   name:"Power Surge",       icon:"🔥", type:"passive",  section:"path1", rank:5, maxRank:5, bonus:"+4% ATK per rank",               color:"#22dd6e" },
+  { id:"t_arc",   name:"Arcane Reserves",   icon:"🔮", type:"utility",  section:"path1", rank:2, maxRank:5, bonus:"+8% Max Mana per rank",          color:"#22dd6e" },
+  { id:"t_res",   name:"Resilient Soul",    icon:"❤️", type:"passive",  section:"path1", rank:0, maxRank:5, bonus:"+10% HP Regen per rank",         color:"#22dd6e" },
+  { id:"t_crit",  name:"Precision Strike",  icon:"🎯", type:"passive",  section:"path1", rank:3, maxRank:5, bonus:"+1% Crit Chance per rank",       color:"#22dd6e" },
+  { id:"t_dodge", name:"Shadow Walk",       icon:"🌑", type:"utility",  section:"path1", rank:0, maxRank:5, bonus:"+1.5% Dodge Chance per rank",    color:"#22dd6e" },
+  { id:"t_cd",    name:"Arcane Flow",       icon:"✨", type:"utility",  section:"path1", rank:2, maxRank:5, bonus:"-2% Skill Cooldown per rank",    color:"#22dd6e" },
+  { id:"t_mind",  name:"Iron Mind",         icon:"🧠", type:"passive",  section:"path1", rank:1, maxRank:5, bonus:"+3% Debuff Resistance per rank", color:"#22dd6e" },
+  { id:"t_life",  name:"Blood Rush",        icon:"💉", type:"passive",  section:"path1", rank:0, maxRank:5, bonus:"+1% Lifesteal per rank",         color:"#22dd6e" },
+  { id:"t_apex",  name:"Apex Predator",     icon:"⚔️", type:"keystone", section:"path1", rank:0, maxRank:5, bonus:"All DMG +8%, but Max HP -10%",   color:"#ffd700" },
+  // Path 2 — 12 nodes (locked Lv.50)
+  { id:"t2_atk",  name:"Wrath of Thunder",  icon:"⚡", type:"passive",  section:"path2", rank:0, maxRank:5, bonus:"+5% Lightning DMG per rank",     color:"#ff7733" },
+  { id:"t2_sp",   name:"Storm Presence",    icon:"🌩️", type:"passive",  section:"path2", rank:0, maxRank:5, bonus:"+2% All Resistances per rank",   color:"#ff7733" },
+  { id:"t2_jdg",  name:"Judgment Call",     icon:"⚖️", type:"utility",  section:"path2", rank:0, maxRank:5, bonus:"Stun Duration +10% per rank",   color:"#ff7733" },
+  { id:"t2_rge",  name:"Righteous Fury",    icon:"🔱", type:"passive",  section:"path2", rank:0, maxRank:5, bonus:"+3% DMG per kill, 5s, per rank", color:"#ff7733" },
+  { id:"t2_hlth", name:"Unyielding",        icon:"🏋️", type:"passive",  section:"path2", rank:0, maxRank:5, bonus:"-5% DMG taken below 30% HP",    color:"#ff7733" },
+  { id:"t2_lgt",  name:"Lightning Reflexes",icon:"🦅", type:"utility",  section:"path2", rank:0, maxRank:5, bonus:"+1% Evasion per rank",           color:"#ff7733" },
+  { id:"t2_wrd",  name:"Sacred Ward",       icon:"🔆", type:"passive",  section:"path2", rank:0, maxRank:5, bonus:"+4% Healing Received per rank",  color:"#ff7733" },
+  { id:"t2_mntr", name:"Iron Guard",        icon:"🪖", type:"passive",  section:"path2", rank:0, maxRank:5, bonus:"+3% Block Chance per rank",      color:"#ff7733" },
+  { id:"t2_smte", name:"Holy Smite",        icon:"☀️", type:"passive",  section:"path2", rank:0, maxRank:5, bonus:"+2% Holy DMG per rank",          color:"#ff7733" },
+  { id:"t2_spd",  name:"Rapid Advance",     icon:"🚀", type:"utility",  section:"path2", rank:0, maxRank:5, bonus:"+4% Move Speed per rank",        color:"#ff7733" },
+  { id:"t2_flk",  name:"Battle Momentum",   icon:"💨", type:"utility",  section:"path2", rank:0, maxRank:5, bonus:"+2% CDR after kills per rank",   color:"#ff7733" },
+  { id:"t2_ks",   name:"Divine Wrath",      icon:"🌟", type:"keystone", section:"path2", rank:0, maxRank:5, bonus:"Holy skills deal +20% bonus DMG", color:"#ffd700" },
+  // Spec 1 — 8 nodes
+  { id:"s1_am",   name:"Arcane Mastery",    icon:"💠", type:"passive",  section:"spec1", rank:4, maxRank:5, bonus:"+5% Magic DMG per rank",         color:"#448aff" },
+  { id:"s1_cs",   name:"Crystal Skin",      icon:"💎", type:"passive",  section:"spec1", rank:2, maxRank:5, bonus:"+2% Block Chance per rank",      color:"#448aff" },
+  { id:"s1_pl",   name:"Phase Lock",        icon:"🌐", type:"utility",  section:"spec1", rank:1, maxRank:5, bonus:"Slow Duration +10% per rank",    color:"#448aff" },
+  { id:"s1_ms",   name:"Mana Surge",        icon:"🔮", type:"passive",  section:"spec1", rank:3, maxRank:5, bonus:"+3% Skill DMG per rank",         color:"#448aff" },
+  { id:"s1_es",   name:"Ethereal Step",     icon:"👻", type:"utility",  section:"spec1", rank:0, maxRank:5, bonus:"+5% Dodge during skills per rank",color:"#448aff" },
+  { id:"s1_ae",   name:"Arcane Empowerment",icon:"🌟", type:"utility",  section:"spec1", rank:0, maxRank:5, bonus:"Buff Duration +8% per rank",     color:"#448aff" },
+  { id:"s1_rw",   name:"Runic Ward",        icon:"🔷", type:"passive",  section:"spec1", rank:0, maxRank:5, bonus:"+4% Magic Resistance per rank",  color:"#448aff" },
+  { id:"s1_ks",   name:"Arcane Annihilation",icon:"☠️",type:"keystone", section:"spec1", rank:0, maxRank:5, bonus:"Magic skills +15% DMG, Mana +20%",color:"#ffd700"},
+  // Spec 2 — 8 nodes (locked Lv.70)
+  { id:"s2_sr",   name:"Soul Harvest",      icon:"💀", type:"passive",  section:"spec2", rank:0, maxRank:5, bonus:"+5% True DMG per rank",          color:"#aa44ff" },
+  { id:"s2_bp",   name:"Blood Ritual",      icon:"🩸", type:"utility",  section:"spec2", rank:0, maxRank:5, bonus:"+2% Lifesteal per rank",         color:"#aa44ff" },
+  { id:"s2_rs",   name:"Rift Mastery",      icon:"🌌", type:"passive",  section:"spec2", rank:0, maxRank:5, bonus:"+4% Void DMG per rank",          color:"#aa44ff" },
+  { id:"s2_nz",   name:"Null Field",        icon:"⬛", type:"utility",  section:"spec2", rank:0, maxRank:5, bonus:"Skill suppression +10% per rank", color:"#aa44ff" },
+  { id:"s2_dk",   name:"Dark Knowledge",    icon:"📚", type:"passive",  section:"spec2", rank:0, maxRank:5, bonus:"+3% Debuff Potency per rank",    color:"#aa44ff" },
+  { id:"s2_vp",   name:"Void Presence",     icon:"🌑", type:"utility",  section:"spec2", rank:0, maxRank:5, bonus:"+2% All DMG in void zones",      color:"#aa44ff" },
+  { id:"s2_cs2",  name:"Cursed Strike",     icon:"🪄", type:"passive",  section:"spec2", rank:0, maxRank:5, bonus:"+1% Curse Duration per rank",    color:"#aa44ff" },
+  { id:"s2_ks",   name:"Oblivion",          icon:"🌀", type:"keystone", section:"spec2", rank:0, maxRank:5, bonus:"True DMG ignores all resistances",color:"#ffd700" },
+];
+
 // ─── SKILLS TAB ───────────────────────────────────────────────────────────────
 function SkillsTab() {
-  const [castOrder, setCastOrder] = useState([...CAST_ORDER_INIT]);
-  const [castDelay, setCastDelay] = useState("0.5");
-  const [ifUnavailable, setIfUnavailable] = useState<"Skip" | "Wait">("Skip");
-  const [oneCycle, setOneCycle] = useState(false);
-  function move(idx: number, dir: -1 | 1) {
-    const n = [...castOrder]; const target = idx + dir;
-    if (target < 0 || target >= n.length) return;
-    [n[idx], n[target]] = [n[target], n[idx]]; setCastOrder(n);
+  const [skills, setSkills]   = useState<ActiveSkill[]>(SKILLS_INIT.map(s => ({...s})));
+  const [equipped, setEquipped] = useState<(string|null)[]>([...EQUIPPED_INIT]);
+
+  const spent     = skills.reduce((a, s) => a + s.level + s.mastery, 0);
+  const remaining = SKILL_POINTS_TOTAL - spent;
+
+  function upgradeLevel(id: string) {
+    setSkills(prev => prev.map(s => {
+      if (s.id !== id || s.level >= 10 || remaining <= 0) return s;
+      if (CHAR_LV < skillLvReq(s.level + 1)) return s;
+      return {...s, level: s.level + 1};
+    }));
   }
+  function upgradeMastery(id: string) {
+    setSkills(prev => prev.map(s => {
+      if (s.id !== id || s.level < 10 || s.mastery >= 5 || remaining <= 0 || CHAR_LV < 90) return s;
+      return {...s, mastery: s.mastery + 1};
+    }));
+  }
+  function toggleEquip(id: string) {
+    const sk = skills.find(s => s.id === id);
+    if (!sk || sk.level === 0) return;
+    setEquipped(prev => {
+      const idx = prev.indexOf(id);
+      if (idx >= 0) { const n = [...prev]; n[idx] = null; return n; }
+      const empty = prev.indexOf(null);
+      if (empty >= 0) { const n = [...prev]; n[empty] = id; return n; }
+      return prev;
+    });
+  }
+
+  const sections = (["path1","path2","spec1","spec2"] as const);
+
   return (
-    <div className="flex-1 overflow-y-auto px-2 py-2" style={{ scrollbarWidth: "none" }}>
+    <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth:"none" }}>
+      {/* SP header */}
+      <div className="px-3 pt-2.5 pb-2 flex-shrink-0">
+        <div className="flex items-center justify-between mb-1">
+          <span style={{ fontSize:8.5, fontFamily:"'Cinzel',serif", fontWeight:700, color:"#d4a017", letterSpacing:"0.08em" }}>SKILL POINTS</span>
+          <span style={{ fontSize:9, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color: remaining > 0 ? "#00e5c8" : "#ff7733" }}>{remaining} remaining · {spent}/{SKILL_POINTS_TOTAL}</span>
+        </div>
+        <div style={{ height:4, background:"#120930", border:"1px solid #3d206044", clipPath:"polygon(3px 0%,100% 0%,calc(100% - 3px) 100%,0% 100%)" }}>
+          <div style={{ height:"100%", width:`${Math.min((spent/SKILL_POINTS_TOTAL)*100,100)}%`, background:"linear-gradient(90deg,#00e5c8aa,#00e5c8)", boxShadow:"0 0 4px #00e5c855" }}/>
+        </div>
+        <div className="flex justify-between mt-0.5">
+          <span style={{ fontSize:7, color:"#3a2858", fontFamily:"'Rajdhani',sans-serif", fontWeight:600 }}>6 Equipped · 16 Available · 15 SP per skill</span>
+          <span style={{ fontSize:7, color:"#3a2858", fontFamily:"'Rajdhani',sans-serif", fontWeight:600 }}>Max 99 at Lv.99</span>
+        </div>
+      </div>
+
+      {/* Equipped skills — 6 slots */}
       <SectionPanel>
-        <SectionTitle>AUTO-CAST SETUP</SectionTitle>
-        <p style={{ fontSize: 8.5, color: "#6050a0", fontFamily: "'Rajdhani',sans-serif", fontWeight: 600, letterSpacing: "0.05em", marginBottom: 10 }}>CAST ORDER</p>
-        <div className="flex flex-col gap-2">
-          {castOrder.map((skill, i) => (
-            <div key={skill.id} className="flex items-center gap-2" style={{ height: 44, padding: "0 8px", background: "#0a0720", border: "1px solid #2a184555", clipPath: "polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%)" }}>
-              <div className="flex items-center justify-center flex-shrink-0" style={{ width: 20, height: 20, background: "#0d0528", border: "1px solid #3d206066", clipPath: "polygon(3px 0%,100% 0%,calc(100% - 3px) 100%,0% 100%)" }}>
-                <span style={{ fontSize: 9, fontFamily: "'Rajdhani',sans-serif", fontWeight: 700, color: "#5a4080" }}>{i + 1}</span>
+        <SectionTitle>EQUIPPED SKILLS</SectionTitle>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:5 }}>
+          {equipped.map((sid, i) => {
+            const sk = sid ? skills.find(s => s.id === sid) : null;
+            return (
+              <div key={i} className="flex flex-col items-center gap-1">
+                <button onClick={() => sid && toggleEquip(sid)} className="relative flex items-center justify-center" style={{ width:42, height:42, background:sk?`${sk.sourceColor}18`:"#0a0720", border:`1.5px solid ${sk?sk.sourceColor+"66":"#2a184533"}`, clipPath:"polygon(7px 0%,100% 0%,calc(100% - 7px) 100%,0% 100%)", filter:sk?`drop-shadow(0 0 5px ${sk.sourceColor}33)`:undefined }}>
+                  {sk ? (
+                    <>
+                      <span style={{ fontSize:19, filter:`drop-shadow(0 0 4px ${sk.sourceColor}55)` }}>{sk.icon}</span>
+                      <div style={{ position:"absolute", bottom:0, right:0, padding:"0 3px", background:"#0a0820dd", border:`1px solid ${sk.sourceColor}44` }}>
+                        <span style={{ fontSize:7, color:sk.sourceColor, fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>{sk.level}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ width:11, height:11, borderRadius:"50%", border:"1px solid #2a184555" }}/>
+                  )}
+                </button>
+                <span style={{ fontSize:6.5, color:sk?"#6050a0":"#1e1438", fontFamily:"'Rajdhani',sans-serif", fontWeight:700, textAlign:"center", lineHeight:1.1, maxWidth:44, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{sk ? sk.name.split(" ")[0] : "Empty"}</span>
               </div>
-              <div className="relative flex-shrink-0 flex items-center justify-center" style={{ width: 28, height: 28 }}>
-                <svg viewBox="0 0 28 28" className="absolute inset-0 w-full h-full"><polygon points="7,1 21,1 27,7 27,21 21,27 7,27 1,21 1,7" fill="#0d0825" stroke="#3d206077" strokeWidth="0.8"/></svg>
-                <span className="relative" style={{ fontSize: 13 }}>{skill.icon}</span>
-              </div>
-              <div className="flex flex-col flex-1">
-                <span style={{ fontSize: 9.5, fontFamily: "'Rajdhani',sans-serif", fontWeight: 700, color: "#c8b8e8" }}>{skill.name}</span>
-                <span style={{ fontSize: 8, fontFamily: "'Rajdhani',sans-serif", fontWeight: 600, color: "#5a4080" }}>{skill.castTime.toFixed(1)}s cast</span>
-              </div>
-              <div className="flex flex-col gap-px flex-shrink-0">
-                <button onClick={() => move(i, -1)} className="flex items-center justify-center" style={{ width: 22, height: 18, background: "#0d0528", border: "1px solid #2a184555", opacity: i === 0 ? 0.3 : 1 }}><ChevronUp size={11} style={{ color: "#7060a0" }}/></button>
-                <button onClick={() => move(i, 1)} className="flex items-center justify-center" style={{ width: 22, height: 18, background: "#0d0528", border: "1px solid #2a184555", opacity: i === castOrder.length - 1 ? 0.3 : 1 }}><ChevronDown size={11} style={{ color: "#7060a0" }}/></button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
-        <div className="flex items-center gap-2 mt-4 mb-3">
-          <div className="flex items-center gap-1.5">
-            <span style={{ fontSize: 8, color: "#6050a0", fontFamily: "'Rajdhani',sans-serif", fontWeight: 700, whiteSpace: "nowrap" }}>Cast Delay</span>
-            <input value={castDelay} onChange={e => setCastDelay(e.target.value)} style={{ width: 36, height: 24, background: "#0a0720", border: "1px solid #3d206055", color: "#e8d8ff", fontSize: 9, fontFamily: "'Rajdhani',sans-serif", fontWeight: 700, textAlign: "center", outline: "none", clipPath: "polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)" }}/>
-          </div>
-          <div className="flex items-center gap-1.5 flex-1">
-            <span style={{ fontSize: 8, color: "#6050a0", fontFamily: "'Rajdhani',sans-serif", fontWeight: 700, whiteSpace: "nowrap" }}>If Unavailable</span>
-            <button onClick={() => setIfUnavailable(p => p === "Skip" ? "Wait" : "Skip")} className="flex items-center justify-center px-2" style={{ height: 24, background: "#0a0720", border: "1px solid #3d206055", clipPath: "polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)" }}>
-              <span style={{ fontSize: 9, color: "#00e5c8", fontFamily: "'Rajdhani',sans-serif", fontWeight: 700 }}>{ifUnavailable} ▾</span>
-            </button>
-          </div>
-          <button onClick={() => setOneCycle(p => !p)} className="flex items-center gap-1" style={{ height: 24, padding: "0 8px", background: oneCycle ? "#0a1535" : "#0a0720", border: `1px solid ${oneCycle ? "#00e5c8" : "#3d206055"}`, clipPath: "polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)" }}>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: oneCycle ? "#00e5c8" : "#3d2060" }}/>
-            <span style={{ fontSize: 8.5, color: oneCycle ? "#00e5c8" : "#5a4080", fontFamily: "'Rajdhani',sans-serif", fontWeight: 700 }}>One Cycle</span>
-          </button>
-        </div>
-        <div className="flex gap-2">
-          {[{ label: "Reset", color: "#5a4080", bg: "#0a0720", border: "#3d206077" }, { label: "Cancel", color: "#aa77ff", bg: "#0a0720", border: "#5a3088" }, { label: "Apply", color: "#00e5c8", bg: "linear-gradient(90deg,#0a1535,#0d1a40,#0a1535)", border: "#00e5c8" }].map(btn => (
-            <button key={btn.label} className="flex-1 flex items-center justify-center" style={{ height: 34, background: btn.bg, border: `1px solid ${btn.border}`, clipPath: "polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%)", filter: btn.label === "Apply" ? "drop-shadow(0 0 5px #00e5c833)" : undefined }}>
-              <span style={{ fontSize: 10, fontFamily: "'Rajdhani',sans-serif", fontWeight: 700, color: btn.color, letterSpacing: "0.06em" }}>{btn.label.toUpperCase()}</span>
-            </button>
-          ))}
-        </div>
+        <p style={{ fontSize:7.5, color:"#3a2858", fontFamily:"'Rajdhani',sans-serif", fontWeight:600, marginTop:8 }}>Tap an equipped skill to unequip · Tap skill in list to equip</p>
       </SectionPanel>
+
+      {/* Skill sections */}
+      {sections.map(src => {
+        const meta  = SOURCE_META[src];
+        const unlocked = CHAR_LV >= meta.unlockLv;
+        const srcSkills = skills.filter(s => s.source === src);
+        return (
+          <SectionPanel key={src}>
+            {/* Section header */}
+            <div className="flex items-center gap-2 mb-3">
+              <div style={{ width:3, height:20, background:meta.color, borderRadius:1, opacity:0.8, flexShrink:0 }}/>
+              <h3 style={{ fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:10.5, color:unlocked?meta.color:"#3a2858", letterSpacing:"0.05em", flex:1 }}>{meta.label.toUpperCase()}</h3>
+              {unlocked
+                ? <span style={{ fontSize:7.5, color:`${meta.color}99`, fontFamily:"'Rajdhani',sans-serif", fontWeight:600 }}>Lv.{meta.unlockLv} ✓ · 4 Skills</span>
+                : <div style={{ padding:"2px 7px", background:"#0a0820", border:"1px solid #2a184533", clipPath:"polygon(3px 0%,100% 0%,calc(100% - 3px) 100%,0% 100%)" }}><span style={{ fontSize:7.5, color:"#3a2858", fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>🔒 Requires Lv.{meta.unlockLv}</span></div>
+              }
+            </div>
+            <div className="flex flex-col gap-2">
+              {srcSkills.map(sk => {
+                const isEq = equipped.includes(sk.id);
+                const locked = !unlocked;
+                const nextLvReq = sk.level < 10 ? skillLvReq(sk.level + 1) : 0;
+                const charBlocked = !locked && sk.level < 10 && nextLvReq > CHAR_LV;
+                const canLv  = !locked && sk.level < 10 && remaining > 0 && nextLvReq <= CHAR_LV;
+                const canMst = !locked && sk.level === 10 && sk.mastery < 5 && remaining > 0 && CHAR_LV >= 90;
+                return (
+                  <div key={sk.id} className="flex items-center gap-2 px-2 py-2" style={{ background:locked?"#070514":isEq?`${sk.sourceColor}0d`:"#0a0720", border:`1px solid ${locked?"#1a102244":isEq?sk.sourceColor+"44":"#2a184533"}`, clipPath:"polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%)", opacity:locked?0.5:1 }}>
+                    {/* Icon / equip toggle */}
+                    <button onClick={() => !locked && toggleEquip(sk.id)} className="relative flex-shrink-0 flex items-center justify-center" style={{ width:40, height:40, background:isEq?`${sk.sourceColor}22`:"#0d0825", border:`1px solid ${isEq?sk.sourceColor+"66":"#2a184544"}`, clipPath:"polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%)" }}>
+                      <span style={{ fontSize:18, filter:locked?undefined:`drop-shadow(0 0 5px ${sk.sourceColor}44)` }}>{sk.icon}</span>
+                      {isEq && <div style={{ position:"absolute", top:1, right:1, width:7, height:7, borderRadius:"50%", background:sk.sourceColor, border:"1px solid #0a0820" }}/>}
+                    </button>
+                    {/* Info */}
+                    <div className="flex-1 flex flex-col gap-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span style={{ fontSize:10.5, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:locked?"#3a2858":isEq?sk.sourceColor:"#c8b8e8", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{sk.name}</span>
+                        {sk.level === 10 && <span style={{ fontSize:7, color:"#ffd700", fontFamily:"'Rajdhani',sans-serif", fontWeight:700, flexShrink:0 }}>MAX</span>}
+                        {isEq && !locked && <span style={{ fontSize:7, color:sk.sourceColor, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, flexShrink:0 }}>EQ</span>}
+                      </div>
+                      {/* Level bar */}
+                      <div className="flex items-center gap-1">
+                        <span style={{ fontSize:7, color:"#4a3870", fontFamily:"'Rajdhani',sans-serif", fontWeight:700, width:14, flexShrink:0 }}>Lv</span>
+                        <div style={{ flex:1, height:3.5, background:"#120930", border:`1px solid ${sk.sourceColor}22`, clipPath:"polygon(2px 0%,100% 0%,calc(100% - 2px) 100%,0% 100%)" }}>
+                          <div style={{ height:"100%", width:`${(sk.level/10)*100}%`, background:`linear-gradient(90deg,${sk.sourceColor}66,${sk.sourceColor})` }}/>
+                        </div>
+                        <span style={{ fontSize:7.5, color:sk.level>0?sk.sourceColor:"#2a1845", fontFamily:"'Rajdhani',sans-serif", fontWeight:700, width:22, flexShrink:0, textAlign:"right" }}>{sk.level}/10</span>
+                      </div>
+                      {/* Mastery dots */}
+                      <div className="flex items-center gap-1">
+                        <span style={{ fontSize:7, color:"#4a3870", fontFamily:"'Rajdhani',sans-serif", fontWeight:700, width:14, flexShrink:0 }}>Mst</span>
+                        <div className="flex gap-0.5">
+                          {Array.from({length:5}).map((_,pi) => (
+                            <div key={pi} style={{ width:6, height:6, borderRadius:"50%", background:pi<sk.mastery?"#ffd700":"#1e1438", border:`1px solid ${pi<sk.mastery?"#ffd70066":"#2a184544"}` }}/>
+                          ))}
+                        </div>
+                        <span style={{ fontSize:7.5, color:sk.mastery>0?"#ffd700":"#2a1845", fontFamily:"'Rajdhani',sans-serif", fontWeight:700, marginLeft:"auto" }}>{sk.mastery}/5</span>
+                      </div>
+                      {charBlocked && <span style={{ fontSize:7, color:"#4a3060", fontFamily:"'Rajdhani',sans-serif", fontWeight:600 }}>🔒 Requires Lv.{nextLvReq} for next rank</span>}
+                    </div>
+                    {/* Upgrade buttons */}
+                    <div className="flex flex-col gap-1 flex-shrink-0">
+                      <button onClick={() => upgradeLevel(sk.id)} className="flex items-center justify-center px-1.5" style={{ height:22, background:canLv?"linear-gradient(90deg,#0a1535,#0d1e44)":"#0a0820", border:`1px solid ${canLv?"#00e5c855":"#1e143344"}`, clipPath:"polygon(3px 0%,100% 0%,calc(100% - 3px) 100%,0% 100%)", opacity:canLv?1:0.35 }}>
+                        <span style={{ fontSize:8.5, color:canLv?"#00e5c8":"#3a2858", fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>+Lv</span>
+                      </button>
+                      <button onClick={() => upgradeMastery(sk.id)} className="flex items-center justify-center px-1.5" style={{ height:22, background:canMst?"linear-gradient(90deg,#1a1004,#2a1800)":"#0a0820", border:`1px solid ${canMst?"#ffd70055":"#1e143344"}`, clipPath:"polygon(3px 0%,100% 0%,calc(100% - 3px) 100%,0% 100%)", opacity:canMst?1:0.35 }}>
+                        <span style={{ fontSize:8.5, color:canMst?"#ffd700":"#3a2858", fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>+Mst</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </SectionPanel>
+        );
+      })}
+      <div style={{ height:12 }}/>
     </div>
   );
 }
 
 // ─── TALENTS TAB ──────────────────────────────────────────────────────────────
-function TalentsTab({ onModal }: { onModal: (p: ModalPayload) => void }) {
-  const [talents] = useState<TalentNode[]>(TALENTS_INIT.map(t => ({ ...t })));
+// Layout helpers — radial point on a circle
+const _toRad = (d: number) => (d * Math.PI) / 180;
+const _rpt = (cx: number, cy: number, r: number, d: number): [number,number] =>
+  [Math.round(cx + r * Math.cos(_toRad(d))), Math.round(cy + r * Math.sin(_toRad(d)))];
+
+// Constellation layout: 12-node (paths) and 8-node (specs)
+const VW = 310, VH = 268, CX = 155, CY = 132;
+const P12_POS: [number,number][] = [
+  [CX, CY] as [number,number],
+  ...([-90,-18,54,126,198].map(a => _rpt(CX,CY,64,a))),
+  ...([-60,0,60,120,180,240].map(a => _rpt(CX,CY,117,a))),
+];
+const P12_EDGES: [number,number][] = [
+  [0,1],[0,2],[0,3],[0,4],[0,5],
+  [1,6],[1,11],[2,6],[2,7],[3,7],[3,8],[4,8],[4,9],[5,10],[5,11],
+  [6,7],[7,8],[8,9],[9,10],[10,11],[11,6],
+];
+const S8_POS: [number,number][] = [
+  [CX, CY] as [number,number],
+  ...([-90,30,150].map(a => _rpt(CX,CY,66,a))),
+  ...([-45,45,135,-135].map(a => _rpt(CX,CY,118,a))),
+];
+const S8_EDGES: [number,number][] = [
+  [0,1],[0,2],[0,3],
+  [1,4],[1,7],[2,4],[2,5],[3,5],[3,6],
+  [4,5],[5,6],[6,7],[7,4],
+];
+const LAYOUT_ORDER: Record<TalentSection, string[]> = {
+  path1: ["t_apex","t_pow","t_vit","t_arc","t_bh","t_swift","t_crit","t_mind","t_cd","t_dodge","t_res","t_life"],
+  path2: ["t2_ks","t2_atk","t2_jdg","t2_rge","t2_hlth","t2_sp","t2_smte","t2_wrd","t2_mntr","t2_lgt","t2_flk","t2_spd"],
+  spec1: ["s1_ks","s1_am","s1_ms","s1_cs","s1_pl","s1_es","s1_ae","s1_rw"],
+  spec2: ["s2_ks","s2_sr","s2_rs","s2_bp","s2_nz","s2_dk","s2_vp","s2_cs2"],
+};
+
+function TalentsTab() {
+  const [talents,   setTalents]   = useState<TalentNode2[]>(TALENTS2_INIT.map(t => ({...t})));
+  const [activeSec, setActiveSec] = useState<TalentSection>("path1");
+  const [selectedId, setSelectedId] = useState<string|null>(null);
+
+  const spent     = talents.reduce((a,t) => a+t.rank, 0);
+  const remaining = TALENT_POINTS_TOTAL - spent;
+
+  function addRank(id: string) {
+    setTalents(prev => prev.map(t => {
+      if (t.id !== id || t.rank >= t.maxRank || remaining <= 0) return t;
+      if (CHAR_LV < TALENT_SECTIONS[t.section].unlockLv) return t;
+      return {...t, rank: t.rank+1};
+    }));
+  }
+  function removeRank(id: string) {
+    setTalents(prev => prev.map(t => t.id===id && t.rank>0 ? {...t, rank:t.rank-1} : t));
+  }
+
+  const secKeys  = (["path1","path2","spec1","spec2"] as const);
+  const meta     = TALENT_SECTIONS[activeSec];
+  const unlocked = CHAR_LV >= meta.unlockLv;
+  const isPath   = activeSec==="path1" || activeSec==="path2";
+  const positions = isPath ? P12_POS : S8_POS;
+  const edges     = isPath ? P12_EDGES : S8_EDGES;
+  const order     = LAYOUT_ORDER[activeSec];
+  const secTalents = order.map(id => talents.find(t => t.id===id)!);
+  const selected = selectedId ? talents.find(t => t.id===selectedId) ?? null : null;
+  const glowId   = `tgc_${activeSec}`;
+
   return (
-    <div className="flex-1 overflow-y-auto px-2 py-2" style={{ scrollbarWidth: "none" }}>
-      <SectionPanel>
-        <SectionTitle action={<HeroPillBtn label="Reset Talents" color="#ff7733"/>}>TALENT CONSTELLATION</SectionTitle>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
-          {talents.map(t => (
-            <button key={t.id} onClick={() => onModal({ type: "talent", data: t })} className="relative flex flex-col items-center justify-center gap-1 py-2 px-1" style={{ background: t.current > 0 ? `${t.color}11` : "#0a0720", border: `1px solid ${t.current > 0 ? t.color + "44" : "#2a184555"}`, clipPath: "polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%)", filter: t.current > 0 ? `drop-shadow(0 0 5px ${t.color}22)` : undefined, transition: "all 0.15s" }}>
-              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: t.current > 0 ? `linear-gradient(90deg,transparent,${t.color},transparent)` : "transparent", opacity: t.current > 0 ? 0.7 : 0 }}/>
-              <div className="relative flex items-center justify-center" style={{ width: 28, height: 28 }}>
-                <svg viewBox="0 0 28 28" className="absolute inset-0 w-full h-full"><polygon points="7,1 21,1 27,7 27,21 21,27 7,27 1,21 1,7" fill="#0d0825" stroke={t.current > 0 ? t.color : "#2a1845"} strokeWidth={t.current > 0 ? "1" : "0.7"} opacity={t.current > 0 ? 0.8 : 0.4}/></svg>
-                <span style={{ fontSize: 13, position: "relative" }}>{t.icon}</span>
-              </div>
-              <span style={{ fontSize: 7.5, fontFamily: "'Rajdhani',sans-serif", fontWeight: 700, color: t.current > 0 ? t.color : "#4a3870", letterSpacing: "0.02em", textAlign: "center", lineHeight: 1.2 }}>{t.name}</span>
-              <div className="flex gap-0.5">{Array.from({ length: t.max }).map((_, pi) => <div key={pi} style={{ width: 5, height: 5, borderRadius: "50%", background: pi < t.current ? t.color : "#2a1845", opacity: pi < t.current ? 1 : 0.4 }}/>)}</div>
-              <span style={{ fontSize: 7, color: t.current > 0 ? "#a090c0" : "#3a2858", fontFamily: "'Rajdhani',sans-serif", fontWeight: 600 }}>{t.current}/{t.max}</span>
-            </button>
-          ))}
+    <div className="flex-1 flex flex-col overflow-hidden">
+      {/* TP header */}
+      <div className="px-3 pt-2 pb-1.5 flex-shrink-0">
+        <div className="flex items-center justify-between mb-1">
+          <span style={{ fontSize:8.5, fontFamily:"'Cinzel',serif", fontWeight:700, color:"#d4a017", letterSpacing:"0.08em" }}>TALENT POINTS</span>
+          <span style={{ fontSize:9, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:remaining>0?"#aa44ff":"#ff7733" }}>
+            {remaining} remaining · {spent}/{TALENT_POINTS_TOTAL}
+          </span>
         </div>
-      </SectionPanel>
+        <div style={{ height:4, background:"#120930", border:"1px solid #3d206044", clipPath:"polygon(3px 0%,100% 0%,calc(100% - 3px) 100%,0% 100%)" }}>
+          <div style={{ height:"100%", width:`${Math.min((spent/TALENT_POINTS_TOTAL)*100,100)}%`, background:"linear-gradient(90deg,#aa44ffaa,#aa44ff)", boxShadow:"0 0 4px #aa44ff55" }}/>
+        </div>
+        <div className="flex justify-between mt-0.5">
+          <span style={{ fontSize:7, color:"#3a2858", fontFamily:"'Rajdhani',sans-serif", fontWeight:600 }}>Ranks: {spent}/200 · 40 Nodes · Tap node to upgrade</span>
+          <span style={{ fontSize:7, color:"#3a2858", fontFamily:"'Rajdhani',sans-serif", fontWeight:600 }}>Max 99 TP at Lv.99</span>
+        </div>
+      </div>
+
+      {/* Section tabs */}
+      <div className="flex flex-shrink-0 px-2 gap-1.5 pb-1">
+        {secKeys.map(sec => {
+          const m  = TALENT_SECTIONS[sec];
+          const isA = activeSec === sec;
+          const isU = CHAR_LV >= m.unlockLv;
+          const pts = talents.filter(t => t.section===sec).reduce((a,t) => a+t.rank, 0);
+          return (
+            <button key={sec} onClick={() => { setActiveSec(sec); setSelectedId(null); }}
+              className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5"
+              style={{ background:isA?`${m.color}18`:"#0a0720", border:`1px solid ${isA?m.color+"55":"#2a184533"}`, clipPath:"polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)", opacity:isU?1:0.55, transition:"all 0.12s" }}>
+              <span style={{ fontSize:8.5, fontFamily:"'Cinzel',serif", fontWeight:700, color:isA?m.color:isU?"#4a3870":"#2a1845", lineHeight:1 }}>
+                {sec==="path1"?"Path I":sec==="path2"?"Path II":sec==="spec1"?"Spec I":"Spec II"}
+              </span>
+              <span style={{ fontSize:7, color:isA?`${m.color}bb`:"#2a1845", fontFamily:"'Rajdhani',sans-serif", fontWeight:600 }}>
+                {isU ? `${pts} pts` : `🔒 Lv.${m.unlockLv}`}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── SVG Constellation ── */}
+      <div className="flex-1 relative" style={{ minHeight:0 }}>
+        {!unlocked ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+            <span style={{ fontSize:42, opacity:0.2 }}>🔒</span>
+            <p style={{ fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:11, color:"#2a1845", letterSpacing:"0.12em", textAlign:"center" }}>REQUIRES LV.{meta.unlockLv}</p>
+            <p style={{ fontSize:8.5, color:"#1e1438", fontFamily:"'Rajdhani',sans-serif", textAlign:"center", lineHeight:1.6, maxWidth:190 }}>
+              {meta.label} grants {meta.nodes} talent nodes and up to {meta.nodes*5} ranks.
+            </p>
+          </div>
+        ) : (
+          <svg viewBox={`0 0 ${VW} ${VH}`} style={{ width:"100%", height:"100%", display:"block" }} preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <radialGradient id={`${glowId}_bg`} cx="50%" cy="50%" r="50%">
+                <stop offset="0%"   stopColor={meta.color} stopOpacity="0.09"/>
+                <stop offset="60%"  stopColor={meta.color} stopOpacity="0.03"/>
+                <stop offset="100%" stopColor={meta.color} stopOpacity="0"/>
+              </radialGradient>
+              <filter id={`${glowId}_nf`} x="-80%" y="-80%" width="260%" height="260%">
+                <feGaussianBlur stdDeviation="4" result="b"/>
+                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <filter id={`${glowId}_lf`} x="-30%" y="-300%" width="160%" height="700%">
+                <feGaussianBlur stdDeviation="2.5" result="b"/>
+                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+
+            {/* Ambient glow */}
+            <ellipse cx={CX} cy={CY} rx={128} ry={118} fill={`url(#${glowId}_bg)`}/>
+
+            {/* Subtle grid dots */}
+            {([-4,-3,-2,-1,0,1,2,3,4] as number[]).map(gx =>
+              ([-3,-2,-1,0,1,2,3] as number[]).map(gy => (
+                <circle key={`${gx}_${gy}`} cx={CX+gx*36} cy={CY+gy*36} r="0.65"
+                  fill={meta.color} fillOpacity="0.11"/>
+              ))
+            )}
+
+            {/* Edges */}
+            {edges.map(([a,b], ei) => {
+              const ta = secTalents[a], tb = secTalents[b];
+              if (!ta || !tb) return null;
+              const [ax,ay] = positions[a], [bx,by] = positions[b];
+              const active = ta.rank>0 && tb.rank>0;
+              return (
+                <line key={ei} x1={ax} y1={ay} x2={bx} y2={by}
+                  stroke={active ? meta.color : "#1e1438"}
+                  strokeWidth={active ? 1.6 : 0.9}
+                  strokeOpacity={active ? 0.8 : 0.3}
+                  filter={active ? `url(#${glowId}_lf)` : undefined}
+                />
+              );
+            })}
+
+            {/* Nodes */}
+            {secTalents.map((t, i) => {
+              if (!t) return null;
+              const [nx, ny] = positions[i];
+              const isKs   = t.type==="keystone";
+              const nr     = isKs ? 21 : 14;
+              const isSel  = selectedId===t.id;
+              const hasRk  = t.rank>0;
+              const isMax  = t.rank>=t.maxRank;
+              const label  = t.name.split(" ").slice(0,2).join(" ");
+
+              return (
+                <g key={t.id} onClick={() => setSelectedId(s => s===t.id ? null : t.id)} style={{ cursor:"pointer" }}>
+                  {/* Outer glow for active nodes */}
+                  {hasRk && (
+                    <circle cx={nx} cy={ny} r={nr+7}
+                      fill={t.color} fillOpacity="0.07"
+                      filter={`url(#${glowId}_nf)`}/>
+                  )}
+                  {/* Pulse ring for max rank */}
+                  {isMax && (
+                    <circle cx={nx} cy={ny} r={nr+4}
+                      fill="none" stroke="#ffd700" strokeWidth="0.9" strokeOpacity="0.6"/>
+                  )}
+                  {/* Selection dashes */}
+                  {isSel && (
+                    <circle cx={nx} cy={ny} r={nr+9}
+                      fill="none" stroke={t.color} strokeWidth="1.3"
+                      strokeOpacity="0.8" strokeDasharray="4 3"/>
+                  )}
+                  {/* Outer ring */}
+                  <circle cx={nx} cy={ny} r={nr+2}
+                    fill="none"
+                    stroke={hasRk ? t.color : "#2a1845"}
+                    strokeWidth={hasRk ? 0.8 : 0.5}
+                    strokeOpacity={hasRk ? 0.5 : 0.22}/>
+                  {/* Main node body */}
+                  <circle cx={nx} cy={ny} r={nr}
+                    fill={hasRk ? `${t.color}26` : "#0d0825e8"}
+                    stroke={hasRk ? t.color : "#2a1845"}
+                    strokeWidth={isKs ? 1.7 : 1.1}
+                    strokeOpacity={hasRk ? 1 : 0.38}/>
+                  {/* Inner shine */}
+                  {hasRk && (
+                    <ellipse cx={nx} cy={ny-nr*0.28} rx={nr*0.5} ry={nr*0.3}
+                      fill={t.color} fillOpacity="0.12"/>
+                  )}
+                  {/* Keystone star decoration */}
+                  {isKs && (
+                    <text x={nx} y={ny-nr-6} textAnchor="middle" dominantBaseline="central"
+                      fontSize="6" fill="#ffd700" fillOpacity="0.8">✦ KEYSTONE ✦</text>
+                  )}
+                  {/* Emoji icon */}
+                  <text x={nx} y={ny} textAnchor="middle" dominantBaseline="central"
+                    fontSize={isKs ? 15 : 11} style={{ userSelect:"none" }}>{t.icon}</text>
+                  {/* Rank badge */}
+                  {hasRk && (
+                    <g>
+                      <circle cx={nx+nr*0.78} cy={ny-nr*0.78} r={5.5}
+                        fill="#0a0820" stroke={isMax?"#ffd700":t.color} strokeWidth="0.9"/>
+                      <text x={nx+nr*0.78} y={ny-nr*0.78}
+                        textAnchor="middle" dominantBaseline="central"
+                        fontSize="5.5" fill={isMax?"#ffd700":t.color}
+                        fontWeight="700" fontFamily="Rajdhani,sans-serif">{t.rank}</text>
+                    </g>
+                  )}
+                  {/* Name label below node */}
+                  <text x={nx} y={ny+nr+9}
+                    textAnchor="middle" dominantBaseline="central"
+                    fontSize="6.8"
+                    fill={hasRk ? t.color : "#3a2858"}
+                    fontFamily="Rajdhani,sans-serif"
+                    fontWeight="700"
+                    style={{ userSelect:"none" }}
+                  >{label}</text>
+                </g>
+              );
+            })}
+          </svg>
+        )}
+      </div>
+
+      {/* ── Selected node detail panel ── */}
+      {selected && (
+        <div className="flex-shrink-0 mx-2 mb-2 px-3 py-2.5"
+          style={{ background:selected.type==="keystone"?"#160e00":"#080618", border:`1.5px solid ${selected.color}55`, clipPath:"polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%)" }}>
+          <div className="flex items-start gap-2.5 mb-2">
+            {/* Big icon */}
+            <div className="relative flex-shrink-0 flex items-center justify-center" style={{ width:40, height:40, background:`${selected.color}18`, border:`1.5px solid ${selected.color}55`, borderRadius:"50%" }}>
+              <span style={{ fontSize:20, filter:`drop-shadow(0 0 6px ${selected.color}66)` }}>{selected.icon}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <span style={{ fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:11, color:selected.color, letterSpacing:"0.04em" }}>{selected.name}</span>
+                <div style={{ padding:"1px 5px", background:`${selected.color}18`, border:`1px solid ${selected.color}44`, clipPath:"polygon(2px 0%,100% 0%,calc(100% - 2px) 100%,0% 100%)", flexShrink:0 }}>
+                  <span style={{ fontSize:6.5, color:selected.color, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, textTransform:"uppercase" }}>{selected.type}</span>
+                </div>
+              </div>
+              <p style={{ fontSize:8.5, color:"#6050a0", fontFamily:"'Rajdhani',sans-serif", fontWeight:500, lineHeight:1.45 }}>{selected.bonus}</p>
+            </div>
+          </div>
+          {/* Rank bar + controls */}
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1 flex-1">
+              {Array.from({length:selected.maxRank}).map((_,pi) => (
+                <div key={pi} style={{ flex:1, height:5, background:pi<selected.rank?selected.color:"#1e1438", border:`1px solid ${pi<selected.rank?selected.color+"77":"#2a184533"}`, opacity:pi<selected.rank?1:0.4 }}/>
+              ))}
+            </div>
+            <span style={{ fontSize:10, color:selected.rank>0?selected.color:"#3a2858", fontFamily:"'Rajdhani',sans-serif", fontWeight:700, width:26, textAlign:"center" }}>{selected.rank}/{selected.maxRank}</span>
+            <button onClick={() => removeRank(selected.id)}
+              className="flex items-center justify-center"
+              style={{ width:30, height:26, background:"#0a0820", border:"1px solid #3a204466", clipPath:"polygon(3px 0%,100% 0%,calc(100% - 3px) 100%,0% 100%)", opacity:selected.rank>0?1:0.3 }}>
+              <span style={{ fontSize:15, color:"#ff7733", fontFamily:"'Rajdhani',sans-serif", fontWeight:700, lineHeight:1 }}>−</span>
+            </button>
+            <button onClick={() => addRank(selected.id)}
+              className="flex items-center justify-center"
+              style={{ width:30, height:26, background:remaining>0&&selected.rank<selected.maxRank&&unlocked?"linear-gradient(135deg,#0a0e35,#0d1540)":"#0a0820", border:`1px solid ${remaining>0&&selected.rank<selected.maxRank&&unlocked?selected.color+"66":"#2a184533"}`, clipPath:"polygon(3px 0%,100% 0%,calc(100% - 3px) 100%,0% 100%)", opacity:remaining>0&&selected.rank<selected.maxRank&&unlocked?1:0.3 }}>
+              <span style={{ fontSize:15, color:remaining>0&&selected.rank<selected.maxRank&&unlocked?selected.color:"#3a2858", fontFamily:"'Rajdhani',sans-serif", fontWeight:700, lineHeight:1 }}>+</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -597,7 +1054,7 @@ function HeroesScreen({ onBack }: { onBack: () => void }) {
       <div className="flex-1 flex flex-col overflow-hidden relative">
         {heroTab === "class"     && <ClassTab/>}
         {heroTab === "skills"    && <SkillsTab/>}
-        {heroTab === "talents"   && <TalentsTab onModal={setModal}/>}
+        {heroTab === "talents"   && <TalentsTab/>}
         {heroTab === "equipment" && <EquipmentTab onModal={setModal}/>}
         {heroTab === "cards"     && <CardsTab onModal={setModal}/>}
         {heroTab === "pets"      && <PetsTab/>}

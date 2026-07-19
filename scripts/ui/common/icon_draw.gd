@@ -359,6 +359,14 @@ static func item_sparkle(ci: CanvasItem, rect: Rect2, color: Color) -> void:
 
 static func draw_item_icon(ci: CanvasItem, icon_id: StringName, rect: Rect2, color: Color) -> void:
 	match icon_id:
+		&"fire":
+			fire_rune(ci, rect)
+		&"ice":
+			ice_rune(ci, rect)
+		&"wind":
+			wind_rune(ci, rect)
+		&"shadow":
+			shadow_rune(ci, rect)
 		&"shield":
 			nav_guild(ci, rect, color)
 		&"boot":
@@ -383,6 +391,25 @@ static func draw_item_icon(ci: CanvasItem, icon_id: StringName, rect: Rect2, col
 			item_target(ci, rect, color)
 		&"sparkle":
 			item_sparkle(ci, rect, color)
+		&"gem":
+			var gem := UIDraw.diamond(rect.get_center(), rect.size.x * 0.38, rect.size.y * 0.45)
+			ci.draw_colored_polygon(gem, Color(color, 0.35))
+			gem.append(gem[0])
+			_stroke(ci, gem, color, 1.2 * _u(rect))
+		&"orb":
+			ci.draw_circle(rect.get_center(), rect.size.x * 0.32, Color(color, 0.2))
+			ci.draw_arc(rect.get_center(), rect.size.x * 0.32, 0.0, TAU, 24, color, 1.2 * _u(rect), true)
+		&"globe":
+			ci.draw_arc(rect.get_center(), rect.size.x * 0.34, 0.0, TAU, 24, color, 1.1 * _u(rect), true)
+			ci.draw_arc(rect.get_center(), rect.size.x * 0.15, -PI * 0.5, PI * 0.5, 12, color, 0.9 * _u(rect), true)
+			ci.draw_line(Vector2(rect.position.x, rect.get_center().y), Vector2(rect.end.x, rect.get_center().y), color, 0.9 * _u(rect), true)
+		&"skull":
+			ci.draw_circle(rect.get_center() + Vector2(0, -rect.size.y * 0.08), rect.size.x * 0.28, Color(color, 0.2))
+			ci.draw_arc(rect.get_center() + Vector2(0, -rect.size.y * 0.08), rect.size.x * 0.28, 0.0, TAU, 24, color, 1.1 * _u(rect), true)
+			ci.draw_circle(rect.get_center() + Vector2(-rect.size.x * 0.1, -rect.size.y * 0.08), rect.size.x * 0.045, color)
+			ci.draw_circle(rect.get_center() + Vector2(rect.size.x * 0.1, -rect.size.y * 0.08), rect.size.x * 0.045, color)
+		&"book":
+			sub_book(ci, rect, color)
 
 
 # ─── Small marks ─────────────────────────────────────────────────────────────
