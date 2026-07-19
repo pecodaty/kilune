@@ -1000,6 +1000,572 @@ function DungeonScreen({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ─── GUILD DATA ───────────────────────────────────────────────────────────────
+const GUILD_MEMBERS_DATA = [
+  { id: 1, name: "Enki",         position: "Member", weeklyActivity: 147, status: "online",  avatar: "🧝" },
+  { id: 2, name: "ovi",          position: "Leader", weeklyActivity: 820, status: "1w ago",  avatar: "🧙" },
+  { id: 3, name: "Kasuma",       position: "Member", weeklyActivity: 310, status: "2mo ago", avatar: "🗡️" },
+  { id: 4, name: "Joseplay12",   position: "Member", weeklyActivity:   0, status: "2mo ago", avatar: "🏹" },
+  { id: 5, name: "Darkon",       position: "Member", weeklyActivity:   0, status: "3mo ago", avatar: "🛡️" },
+  { id: 6, name: "Pimpolho",     position: "Member", weeklyActivity:   0, status: "3mo ago", avatar: "🌿" },
+  { id: 7, name: "Shadowwolfz5", position: "Member", weeklyActivity:   0, status: "3mo ago", avatar: "💀" },
+  { id: 8, name: "MEG",          position: "Member", weeklyActivity:   0, status: "3mo ago", avatar: "🌸" },
+];
+const GUILD_SHOP_DATA = [
+  { id: "awaken",  name: "Awakening Scroll",  icon: "📜", price: 4000,  color: "#ffd700" },
+  { id: "enhance", name: "Enhancement Gear",  icon: "⚙️", price: 4000,  color: "#448aff" },
+  { id: "summon",  name: "Summoning Essence", icon: "✨", price: 10000, color: "#aa44ff" },
+  { id: "soul",    name: "Soul Crystal",      icon: "💎", price: 10000, color: "#00e5c8" },
+];
+const GUILD_SCHEDULE_DATA = [
+  { id: "treasure", name: "Family Treasure Hunt",     type: "Daily", time: "19:00", status: "available"   as const, icon: "🗺️" },
+  { id: "abyssal",  name: "Cross the Abyssal Portal", type: "Daily", time: "19:00", status: "coming_soon" as const, icon: "🌀" },
+];
+const GUILD_RESEARCH_DATA = [
+  { id: "atk",  name: "Battle Mastery",  desc: "Increases all members ATK by 1% per level.",      level: 3, max: 10, color: "#ff7733", icon: "⚔️" },
+  { id: "hp",   name: "Vitality Ward",   desc: "Increases all members Max HP by 1.5% per level.", level: 5, max: 10, color: "#22dd6e", icon: "💚" },
+  { id: "def",  name: "Iron Bastion",    desc: "Reduces damage taken by 0.5% per level.",          level: 2, max: 10, color: "#448aff", icon: "🛡️" },
+  { id: "spd",  name: "Swift Pursuit",   desc: "Increases Move Speed by 1% per level.",            level: 1, max: 10, color: "#ffd700", icon: "⚡" },
+];
+type GuildModal = "hall" | "boss" | "shop" | "academy" | "schedule" | null;
+type GuildHallTab = "hall" | "members" | "donation";
+
+function GuildBackground() {
+  return (
+    <svg viewBox="0 0 390 580" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice" style={{ pointerEvents: "none" }}>
+      <defs>
+        <linearGradient id="gsky" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#030110"/><stop offset="55%" stopColor="#0b0422"/><stop offset="100%" stopColor="#130828"/>
+        </linearGradient>
+        <radialGradient id="gamb" cx="50%" cy="25%" r="55%">
+          <stop offset="0%" stopColor="#3311aa" stopOpacity="0.22"/><stop offset="100%" stopColor="transparent" stopOpacity="0"/>
+        </radialGradient>
+        <radialGradient id="gtorch" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#ff8800" stopOpacity="0.38"/><stop offset="100%" stopColor="transparent" stopOpacity="0"/>
+        </radialGradient>
+        <pattern id="gfloor" x="0" y="0" width="48" height="22" patternUnits="userSpaceOnUse">
+          <rect x="1" y="1" width="45" height="19" fill="#0d0828" stroke="#221855" strokeWidth="0.7" rx="1"/>
+        </pattern>
+      </defs>
+      <rect width="390" height="580" fill="url(#gsky)"/>
+      <ellipse cx="195" cy="120" rx="200" ry="130" fill="url(#gamb)"/>
+      <rect x="0" y="90" width="64" height="380" fill="#09061c"/>
+      <rect x="0" y="78" width="64" height="15" fill="#0c0825"/>
+      {[0,1,2].map(i => <rect key={"lb"+i} x={i*22} y="64" width="15" height="17" fill="#0c0825" rx="1"/>)}
+      <line x1="64" y1="78" x2="64" y2="470" stroke="#251855" strokeWidth="1"/>
+      {[110,132,154,176,198,220,242,264,286,308,330].map((y,i) => <line key={"ls"+i} x1="0" y1={y} x2="64" y2={y} stroke="#14103a" strokeWidth="0.7" opacity="0.5"/>)}
+      <rect x="326" y="90" width="64" height="380" fill="#09061c"/>
+      <rect x="326" y="78" width="64" height="15" fill="#0c0825"/>
+      {[0,1,2].map(i => <rect key={"rb"+i} x={326+i*22} y="64" width="15" height="17" fill="#0c0825" rx="1"/>)}
+      <line x1="326" y1="78" x2="326" y2="470" stroke="#251855" strokeWidth="1"/>
+      {[110,132,154,176,198,220,242,264,286,308,330].map((y,i) => <line key={"rs"+i} x1="326" y1={y} x2="390" y2={y} stroke="#14103a" strokeWidth="0.7" opacity="0.5"/>)}
+      <ellipse cx="56" cy="220" rx="44" ry="44" fill="url(#gtorch)"/>
+      <rect x="51" y="214" width="10" height="18" fill="#5a3010" rx="2"/>
+      <ellipse cx="56" cy="212" rx="6" ry="8" fill="#ff9922"/>
+      <ellipse cx="56" cy="208" rx="3.5" ry="6" fill="#ffee44" opacity="0.8"/>
+      <ellipse cx="334" cy="220" rx="44" ry="44" fill="url(#gtorch)"/>
+      <rect x="329" y="214" width="10" height="18" fill="#5a3010" rx="2"/>
+      <ellipse cx="334" cy="212" rx="6" ry="8" fill="#ff9922"/>
+      <ellipse cx="334" cy="208" rx="3.5" ry="6" fill="#ffee44" opacity="0.8"/>
+      <line x1="30" y1="95" x2="30" y2="150" stroke="#5a3800" strokeWidth="2.5"/>
+      <path d="M 30 95 L 52 102 L 30 120 L 8 102 Z" fill="#00bcd4" opacity="0.8"/>
+      <line x1="360" y1="95" x2="360" y2="150" stroke="#5a3800" strokeWidth="2.5"/>
+      <path d="M 360 95 L 382 102 L 360 120 L 338 102 Z" fill="#00bcd4" opacity="0.8"/>
+      {[[35,22],[92,12],[145,28],[195,8],[260,18],[315,28],[358,14],[72,50],[178,42],[298,46]].map(([x,y],i) =>
+        <circle key={"st"+i} cx={x} cy={y} r={i%4===0?1.2:0.7} fill="#fff" opacity={0.2+i%3*0.1}/>
+      )}
+      <rect x="0" y="450" width="390" height="130" fill="#080520"/>
+      <line x1="0" y1="450" x2="390" y2="450" stroke="#3322cc" strokeWidth="1.5" opacity="0.3"/>
+      <rect x="0" y="452" width="390" height="80" fill="url(#gfloor)"/>
+    </svg>
+  );
+}
+
+function GuildEmblem({ size = 64 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" fill="none">
+      <defs>
+        <radialGradient id="gem-inner" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#1e0a44"/><stop offset="100%" stopColor="#06030f"/>
+        </radialGradient>
+      </defs>
+      <circle cx="32" cy="32" r="30" stroke="#ffd700" strokeWidth="1.8" fill="url(#gem-inner)"/>
+      <circle cx="32" cy="32" r="23" stroke="#00bcd4" strokeWidth="0.9" fill="none" opacity="0.6"/>
+      {[[32,48,32,55],[43,43,49,49],[48,32,55,32],[43,21,49,15],[32,16,32,9],[21,21,15,15],[16,32,9,32],[21,43,15,49]].map(([x1,y1,x2,y2],i) =>
+        <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#ffd700" strokeWidth="0.8" opacity="0.35"/>
+      )}
+      <path d="M32 14 C38 17 41 22 40 28 C39 34 36 37 32 38 C28 37 25 34 24 28 C23 22 26 17 32 14Z" fill="#cc2200" opacity="0.9"/>
+      <path d="M24 26 C18 21 13 23 15 30" fill="none" stroke="#aa1100" strokeWidth="3.5" strokeLinecap="round"/>
+      <path d="M40 26 C46 21 51 23 49 30" fill="none" stroke="#aa1100" strokeWidth="3.5" strokeLinecap="round"/>
+      <path d="M30 38 C29 44 30 49 32 51 C34 49 35 44 34 38" fill="#aa1100" opacity="0.7"/>
+      <circle cx="29" cy="22" r="2.2" fill="#ff6600"/>
+      <circle cx="35" cy="22" r="2.2" fill="#ff6600"/>
+      <circle cx="29" cy="22" r="0.9" fill="#fff" opacity="0.8"/>
+      <circle cx="35" cy="22" r="0.9" fill="#fff" opacity="0.8"/>
+      <polygon points="32,2 34.5,6 32,4.5 29.5,6" fill="#ffd700"/>
+      <polygon points="32,62 34.5,58 32,59.5 29.5,58" fill="#ffd700"/>
+      <polygon points="2,32 6,29.5 4.5,32 6,34.5" fill="#ffd700"/>
+      <polygon points="62,32 58,29.5 59.5,32 58,34.5" fill="#ffd700"/>
+    </svg>
+  );
+}
+
+function GuildHallCard({ onClick }: { onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="relative w-full" style={{ height: 190 }}>
+      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0e0830 0%,#09051e 65%,#120830 100%)", border: "1px solid #3d206088" }}/>
+      {(["tl","tr","bl","br"] as const).map(c => (
+        <svg key={c} className="absolute" style={{ width: 18, height: 18, top: c[0]==="t"?0:undefined, bottom: c[0]==="b"?0:undefined, left: c[1]==="l"?0:undefined, right: c[1]==="r"?0:undefined }} viewBox="0 0 18 18">
+          {c==="tl"&&<polyline points="0,14 0,0 14,0" fill="none" stroke="#ffd700" strokeWidth="1.5" opacity="0.75"/>}
+          {c==="tr"&&<polyline points="4,0 18,0 18,14" fill="none" stroke="#ffd700" strokeWidth="1.5" opacity="0.75"/>}
+          {c==="bl"&&<polyline points="0,4 0,18 14,18" fill="none" stroke="#ffd700" strokeWidth="1.5" opacity="0.75"/>}
+          {c==="br"&&<polyline points="4,18 18,18 18,4" fill="none" stroke="#ffd700" strokeWidth="1.5" opacity="0.75"/>}
+        </svg>
+      ))}
+      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 358 190" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="arch-teal" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#00bcd4" stopOpacity="0.15"/>
+            <stop offset="50%" stopColor="#00e5c8" stopOpacity="0.8"/>
+            <stop offset="100%" stopColor="#00bcd4" stopOpacity="0.15"/>
+          </linearGradient>
+          <radialGradient id="gh-amb" cx="50%" cy="42%" r="45%">
+            <stop offset="0%" stopColor="#4422aa" stopOpacity="0.25"/><stop offset="100%" stopColor="transparent" stopOpacity="0"/>
+          </radialGradient>
+        </defs>
+        <ellipse cx="179" cy="88" rx="140" ry="100" fill="url(#gh-amb)"/>
+        <rect x="18" y="24" width="28" height="148" fill="#100838" stroke="#3d2060" strokeWidth="0.8"/>
+        <rect x="18" y="17" width="28" height="10" fill="#180a42"/>
+        <rect x="312" y="24" width="28" height="148" fill="#100838" stroke="#3d2060" strokeWidth="0.8"/>
+        <rect x="312" y="17" width="28" height="10" fill="#180a42"/>
+        <path d="M 46 62 Q 179 8 312 62" fill="none" stroke="url(#arch-teal)" strokeWidth="2.8"/>
+        <path d="M 46 62 Q 179 8 312 62" fill="none" stroke="#00e5c8" strokeWidth="12" opacity="0.06"/>
+        <path d="M 54 68 Q 179 18 304 68" fill="none" stroke="#00bcd4" strokeWidth="0.9" opacity="0.3"/>
+        <line x1="46" y1="62" x2="18" y2="82" stroke="#ffd700" strokeWidth="1" opacity="0.4"/>
+        <circle cx="18" cy="82" r="3" fill="#ffd700" opacity="0.5"/>
+        <line x1="312" y1="62" x2="340" y2="82" stroke="#ffd700" strokeWidth="1" opacity="0.4"/>
+        <circle cx="340" cy="82" r="3" fill="#ffd700" opacity="0.5"/>
+        <polygon points="179,6 184,14 179,11 174,14" fill="#ffd700" opacity="0.9"/>
+        <line x1="38" y1="160" x2="320" y2="160" stroke="#2a1855" strokeWidth="0.8" opacity="0.7"/>
+      </svg>
+      <div className="absolute flex items-center justify-center" style={{ top: 24, left: 0, right: 0 }}>
+        <div style={{ filter: "drop-shadow(0 0 14px #cc220044)" }}><GuildEmblem size={78}/></div>
+      </div>
+      <div className="absolute flex flex-col items-center gap-0.5" style={{ bottom: 12, left: 0, right: 0 }}>
+        <span style={{ fontFamily: "'Cinzel',serif", fontWeight: 700, fontSize: 16, color: "#ffd700", letterSpacing: "0.09em", textShadow: "0 0 14px #ffd70044" }}>IRON PACT</span>
+        <div className="flex items-center gap-3">
+          <span style={{ fontSize: 9, color: "#7060a0", fontFamily: "'Rajdhani',sans-serif", fontWeight: 600 }}>Members 72/90</span>
+          <div style={{ width: 1, height: 9, background: "#3d2060" }}/>
+          <span style={{ fontSize: 9, color: "#7060a0", fontFamily: "'Rajdhani',sans-serif", fontWeight: 600 }}>Level 10</span>
+          <div style={{ width: 1, height: 9, background: "#3d2060" }}/>
+          <span style={{ fontSize: 9, color: "#00e5c8", fontFamily: "'Rajdhani',sans-serif", fontWeight: 700 }}>View Details ▸</span>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function GuildAreaTile({ icon, label, subtitle, color, badge, onClick }: {
+  icon: string; label: string; subtitle: string; color: string; badge?: string; onClick: () => void;
+}) {
+  return (
+    <button onClick={onClick} className="relative flex flex-col items-center justify-center gap-2" style={{
+      height: 108,
+      background: `linear-gradient(160deg,${color}10 0%,${color}05 100%)`,
+      border: `1px solid ${color}44`,
+      clipPath: "polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%)",
+      filter: `drop-shadow(0 2px 8px ${color}18)`,
+    }}>
+      <div style={{ position:"absolute", top:0, left:10, right:10, height:1.5, background:`linear-gradient(90deg,transparent,${color}88,transparent)` }}/>
+      <div style={{ position:"absolute", left:0, top:14, bottom:14, width:2, background:color, borderRadius:1, opacity:0.7 }}/>
+      {badge && (
+        <div style={{ position:"absolute", top:6, right:8, height:16, padding:"0 6px", background:`${color}22`, border:`1px solid ${color}66`, clipPath:"polygon(3px 0%,100% 0%,calc(100% - 3px) 100%,0% 100%)" }}>
+          <span style={{ fontSize:7.5, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color }}>{badge}</span>
+        </div>
+      )}
+      <div className="relative flex items-center justify-center" style={{ width:44, height:44 }}>
+        <svg viewBox="0 0 44 44" className="absolute inset-0 w-full h-full">
+          <polygon points="11,1 33,1 43,11 43,33 33,43 11,43 1,33 1,11" fill="#0d0825" stroke={color} strokeWidth="1.2" opacity="0.75"/>
+          <polygon points="15,5 29,5 39,15 39,29 29,39 15,39 5,29 5,15" fill="none" stroke={color} strokeWidth="0.5" opacity="0.28"/>
+        </svg>
+        <span style={{ position:"relative", fontSize:22, filter:`drop-shadow(0 0 6px ${color}66)` }}>{icon}</span>
+      </div>
+      <div className="flex flex-col items-center">
+        <span style={{ fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:10.5, color:"#d0c0f0", letterSpacing:"0.04em", lineHeight:1 }}>{label}</span>
+        <span style={{ fontSize:8.5, color, fontFamily:"'Rajdhani',sans-serif", fontWeight:600, marginTop:2 }}>{subtitle}</span>
+      </div>
+    </button>
+  );
+}
+
+function GuildDetailsContent() {
+  return (
+    <div className="flex flex-col items-center px-4 py-4 gap-4">
+      <div style={{ filter:"drop-shadow(0 0 16px #cc220033)" }}><GuildEmblem size={76}/></div>
+      <div className="text-center">
+        <h2 style={{ fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:18, color:"#ffd700", letterSpacing:"0.07em" }}>IRON PACT</h2>
+        <div className="flex items-center justify-center gap-4 mt-1.5">
+          <span style={{ fontSize:9.5, color:"#6050a0", fontFamily:"'Rajdhani',sans-serif", fontWeight:600 }}>Members 72/90</span>
+          <div style={{ width:1, height:10, background:"#3d2060" }}/>
+          <span style={{ fontSize:9.5, color:"#6050a0", fontFamily:"'Rajdhani',sans-serif", fontWeight:600 }}>Lv.10</span>
+        </div>
+      </div>
+      <div className="w-full" style={{ background:"#0a082088", border:"1px solid #2a184544", padding:"12px 14px" }}>
+        {[{ label:"Guild EXP", value:4500, max:6000, color:"#00e5c8" },{ label:"Guild Funds", value:38000, max:100000, color:"#ffd700" }].map(s => (
+          <div key={s.label} style={{ marginBottom: s.label==="Guild EXP"?10:0 }}>
+            <div className="flex justify-between items-center mb-1">
+              <span style={{ fontSize:8.5, color:"#6050a0", fontFamily:"'Rajdhani',sans-serif", fontWeight:600 }}>{s.label}</span>
+              <span style={{ fontSize:8.5, color:s.color, fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>{s.value.toLocaleString()}/{s.max.toLocaleString()}</span>
+            </div>
+            <div style={{ height:5, background:"#120930", border:`1px solid ${s.color}22`, clipPath:"polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)" }}>
+              <div style={{ height:"100%", width:`${(s.value/s.max)*100}%`, background:`linear-gradient(90deg,${s.color}55,${s.color})`, boxShadow:`0 0 4px ${s.color}66` }}/>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="w-full" style={{ background:"#08061888", border:"1px solid #3d206044", padding:"12px 14px" }}>
+        <p style={{ fontSize:8.5, fontFamily:"'Cinzel',serif", fontWeight:700, color:"#d4a017", letterSpacing:"0.06em", marginBottom:8 }}>ANNOUNCEMENT</p>
+        <p style={{ fontSize:10, color:"#7060a0", fontFamily:"'Rajdhani',sans-serif", fontWeight:500, lineHeight:1.65 }}>chicos no se olviden de donar al clan cada reset y entrar al teatro magico</p>
+      </div>
+      <div className="flex gap-3 w-full">
+        {["Family List","Family Log"].map((label,i) => (
+          <button key={label} className="flex-1 flex items-center justify-center" style={{ height:38, background: i===0?"linear-gradient(90deg,#0a1535,#0d1a40,#0a1535)":"#0a0820", border:`1px solid ${i===0?"#00e5c8":"#3d206066"}`, clipPath:"polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%)", filter:i===0?"drop-shadow(0 0 5px #00e5c822)":undefined }}>
+            <span style={{ fontSize:9.5, fontFamily:"'Cinzel',serif", fontWeight:700, color:i===0?"#00e5c8":"#4a3870", letterSpacing:"0.05em" }}>{label.toUpperCase()}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function GuildMembersContent() {
+  return (
+    <div className="flex flex-col">
+      <div className="flex items-center px-3 py-2 flex-shrink-0 sticky top-0" style={{ background:"#0a0820", borderBottom:"1px solid #2a184555" }}>
+        <span className="flex-1" style={{ fontSize:8.5, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:"#4a3870", letterSpacing:"0.04em" }}>Name</span>
+        <span style={{ fontSize:8.5, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:"#4a3870", width:68, textAlign:"center" }}>Weekly Act.</span>
+        <span style={{ fontSize:8.5, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:"#4a3870", width:58, textAlign:"right" }}>Position</span>
+      </div>
+      {GUILD_MEMBERS_DATA.map((m,i) => (
+        <div key={m.id} className="flex items-center px-3 py-2" style={{ background:i%2===0?"#0a0720":"#090618", borderBottom:"1px solid #1e143333" }}>
+          <div className="relative flex-shrink-0 flex items-center justify-center" style={{ width:32, height:32, marginRight:8 }}>
+            <svg viewBox="0 0 32 32" className="absolute inset-0 w-full h-full"><rect x="1" y="1" width="30" height="30" fill="#0d0825" stroke={m.position==="Leader"?"#ffd700":"#3d2060"} strokeWidth={m.position==="Leader"?1.5:0.8}/></svg>
+            <span style={{ position:"relative", fontSize:15 }}>{m.avatar}</span>
+          </div>
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <span style={{ fontSize:10, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:m.status==="online"?"#00e5c8":"#c8b8e8", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{m.name}</span>
+            <span style={{ fontSize:7.5, color:m.status==="online"?"#22dd6e":"#3a2858", fontFamily:"'Rajdhani',sans-serif", fontWeight:600 }}>{m.status==="online"?"Online":m.status}</span>
+          </div>
+          <span style={{ width:68, textAlign:"center", fontSize:10, color:"#6050a0", fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>{m.weeklyActivity}</span>
+          <span style={{ width:58, textAlign:"right", fontSize:9, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:m.position==="Leader"?"#ffd700":"#5a4080" }}>{m.position}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function GuildDonationContent() {
+  const [donated, setDonated] = useState(false);
+  const items = ["🐠","🦋",null];
+  return (
+    <div className="flex flex-col items-center px-4 py-6 gap-5">
+      <p style={{ fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:14, color:"#d4a017", letterSpacing:"0.06em" }}>Donation</p>
+      <div className="flex gap-4">
+        {items.map((item,i) => (
+          <div key={i} className="relative flex items-center justify-center" style={{ width:64, height:64, background:"#0a0720", border:`1px solid ${item?"#3d2060":"#1e1440"}`, clipPath:"polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%)" }}>
+            {item ? <span style={{ fontSize:28 }}>{item}</span> : <div style={{ width:22, height:22, borderRadius:"50%", background:"#120930", border:"1px solid #2a1845" }}/>}
+            {item && <div style={{ position:"absolute", bottom:2, left:0, right:0, textAlign:"center" }}><span style={{ fontSize:7, color:"#6050a0", fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>Lv.{i+1}</span></div>}
+          </div>
+        ))}
+      </div>
+      <button onClick={() => setDonated(true)} style={{ height:42, padding:"0 32px", background: donated?"#0a0820":"linear-gradient(90deg,#0a2035,#0d3040,#0a2035)", border:`1px solid ${donated?"#3d206055":"#00e5c8"}`, clipPath:"polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%)", filter:donated?undefined:"drop-shadow(0 0 8px #00e5c833)" }}>
+        <span style={{ fontSize:12, fontFamily:"'Cinzel',serif", fontWeight:700, color:donated?"#3a2858":"#00e5c8", letterSpacing:"0.1em" }}>{donated?"DONATED":"FREE"}</span>
+      </button>
+      <span style={{ fontSize:9.5, color:"#5a4080", fontFamily:"'Rajdhani',sans-serif", fontWeight:600 }}>Remaining attempts today: 5</span>
+    </div>
+  );
+}
+
+function GuildHallModal({ onClose }: { onClose: () => void }) {
+  const [tab, setTab] = useState<GuildHallTab>("hall");
+  const tabs: { id: GuildHallTab; label: string }[] = [
+    { id:"hall", label:"Family Hall" },{ id:"members", label:"Members" },{ id:"donation", label:"Donation" },
+  ];
+  return (
+    <div className="absolute inset-0 z-50 flex flex-col" style={{ background:"#06040f" }}>
+      <div className="relative flex items-center justify-center flex-shrink-0" style={{ height:56 }}>
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 390 56" preserveAspectRatio="none">
+          <defs><linearGradient id="gmod-hdr" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#1a0a3a"/><stop offset="50%" stopColor="#2a1060"/><stop offset="100%" stopColor="#1a0a3a"/></linearGradient></defs>
+          <rect width="390" height="56" fill="url(#gmod-hdr)"/>
+          <path d="M 40 56 Q 195 30 350 56" fill="none" stroke="#ffd700" strokeWidth="1.2" opacity="0.45"/>
+          <path d="M 20 56 Q 195 22 370 56" fill="none" stroke="#ffd700" strokeWidth="0.5" opacity="0.2"/>
+          <polygon points="195,26 200,34 195,31 190,34" fill="#ffd700" opacity="0.8"/>
+        </svg>
+        <span style={{ fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:15, color:"#ffd700", letterSpacing:"0.07em", textShadow:"0 0 14px #ffd70033" }}>Family Details</span>
+        <button onClick={onClose} className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center" style={{ width:28, height:24, background:"#1e1040", border:"1px solid #3d206066", clipPath:"polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)" }}>
+          <X size={12} style={{ color:"#7060a0" }}/>
+        </button>
+      </div>
+      <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth:"none" }}>
+        {tab === "hall"     && <GuildDetailsContent/>}
+        {tab === "members"  && <GuildMembersContent/>}
+        {tab === "donation" && <GuildDonationContent/>}
+      </div>
+      <div className="relative flex flex-shrink-0" style={{ height:52, borderTop:"1px solid #2a184555", background:"linear-gradient(0deg,#07040f,#0d0825)" }}>
+        <div className="absolute top-0 left-0 right-0 flex pointer-events-none">
+          {tabs.map(t => <div key={t.id} className="flex-1" style={{ height:1.5, background:tab===t.id?"linear-gradient(90deg,transparent,#ffd700,transparent)":undefined }}/>)}
+        </div>
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} className="flex-1 flex flex-col items-center justify-center gap-0.5">
+            <span style={{ fontSize:9, fontFamily:"'Cinzel',serif", fontWeight:700, color:tab===t.id?"#ffd700":"#3a2858", letterSpacing:"0.05em", textTransform:"uppercase" }}>{t.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function GuildBossModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="absolute inset-0 z-50 flex flex-col" style={{ background:"linear-gradient(180deg,#110208 0%,#180510 60%,#0e0210 100%)" }}>
+      <div className="relative flex items-center px-4 flex-shrink-0" style={{ height:56, background:"#0e0210", borderBottom:"1px solid #ff440033" }}>
+        <div style={{ width:3, height:22, background:"linear-gradient(180deg,#ff4422,#aa1100)", borderRadius:2, marginRight:10 }}/>
+        <span style={{ fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:14, color:"#ff9966", letterSpacing:"0.05em", flex:1 }}>GUILD BOSS</span>
+        <button onClick={onClose} className="flex items-center justify-center" style={{ width:28, height:24, background:"#180510", border:"1px solid #ff440033", clipPath:"polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)" }}><X size={12} style={{ color:"#ff7755" }}/></button>
+      </div>
+      <div className="flex items-center justify-center py-2.5" style={{ background:"#ff440010", borderBottom:"1px solid #ff440022" }}>
+        <span style={{ fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:13, color:"#ff9966", letterSpacing:"0.04em" }}>Conquer the Lava Behemoth</span>
+      </div>
+      <div className="flex-1 flex flex-col items-center justify-center gap-3" style={{ padding:"0 24px" }}>
+        <div className="relative flex items-center justify-center" style={{ width:110, height:120 }}>
+          <span style={{ fontSize:80, lineHeight:1, filter:"drop-shadow(0 0 24px #ff440077) drop-shadow(0 0 48px #aa110044)" }}>🌋</span>
+          <span style={{ position:"absolute", bottom:4, left:"50%", transform:"translateX(-50%)", fontSize:38, filter:"drop-shadow(0 0 10px #ff660044)" }}>🔥</span>
+        </div>
+        <div className="w-full">
+          <div className="flex justify-between items-center mb-1">
+            <span style={{ fontSize:9, color:"#ff9966", fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>BOSS HP</span>
+            <span style={{ fontSize:9, color:"#ff6644", fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>1,240,000 / 2,000,000</span>
+          </div>
+          <div style={{ height:8, background:"#0e0210", border:"1px solid #ff440033", clipPath:"polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)" }}>
+            <div style={{ height:"100%", width:"62%", background:"linear-gradient(90deg,#aa1100,#ff4400)", boxShadow:"0 0 6px #ff440077" }}/>
+          </div>
+        </div>
+        <div className="w-full" style={{ background:"#0e021088", border:"1px solid #ff440022", padding:"10px 14px" }}>
+          <p style={{ fontSize:9, fontFamily:"'Cinzel',serif", color:"#d4a017", letterSpacing:"0.05em", marginBottom:8 }}>CONQUEST REWARDS</p>
+          <p style={{ fontSize:8.5, color:"#5a4080", fontFamily:"'Rajdhani',sans-serif", fontWeight:600, marginBottom:8 }}>According to Boss Level</p>
+          <div className="flex gap-4">
+            {["💎 x120","📜 x3","⭐ x5"].map((r,i) => <span key={i} style={{ fontSize:10, color:"#c8b8e8", fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>{r}</span>)}
+          </div>
+        </div>
+        <span style={{ fontSize:8.5, color:"#4a3060", fontFamily:"'Rajdhani',sans-serif", fontWeight:600, textAlign:"center" }}>Sweep rewards based on highest DMG achieved</span>
+      </div>
+      <div className="flex gap-3 px-4 pb-6">
+        <button className="flex-1 flex items-center justify-center" style={{ height:46, background:"#0e0210", border:"1px solid #ff440033", clipPath:"polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%)" }}>
+          <span style={{ fontSize:12, fontFamily:"'Cinzel',serif", fontWeight:700, color:"#5a3040", letterSpacing:"0.08em" }}>SWEEP</span>
+        </button>
+        <button className="flex-1 flex items-center justify-center" style={{ height:46, background:"linear-gradient(90deg,#6a0a0a,#aa1100,#6a0a0a)", border:"1px solid #ff440066", clipPath:"polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%)", filter:"drop-shadow(0 0 10px #ff220033)" }}>
+          <span style={{ fontSize:12, fontFamily:"'Cinzel',serif", fontWeight:700, color:"#ffaa88", letterSpacing:"0.08em" }}>CHALLENGE</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function GuildShopModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="absolute inset-0 z-50 flex flex-col" style={{ background:"linear-gradient(180deg,#04020f 0%,#08031a 100%)" }}>
+      <div className="relative flex items-center px-4 flex-shrink-0" style={{ height:56, background:"#06041488", borderBottom:"1px solid #ffd70022" }}>
+        <div style={{ width:3, height:22, background:"linear-gradient(180deg,#ffd700,#8b6200)", borderRadius:2, marginRight:10 }}/>
+        <div className="flex-1">
+          <span style={{ fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:14, color:"#ffd700", letterSpacing:"0.05em" }}>GUILD SHOP</span>
+          <div className="flex items-center gap-1 mt-0.5">
+            <span style={{ fontSize:8.5, color:"#6050a0", fontFamily:"'Rajdhani',sans-serif", fontWeight:600 }}>Guild Coins:</span>
+            <span style={{ fontSize:9, color:"#ffd700", fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>48,360</span>
+          </div>
+        </div>
+        <button onClick={onClose} className="flex items-center justify-center" style={{ width:28, height:24, background:"#0a0820", border:"1px solid #ffd70033", clipPath:"polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)" }}><X size={12} style={{ color:"#a08040" }}/></button>
+      </div>
+      <div className="flex items-center justify-center py-2" style={{ background:"#ffd70008", borderBottom:"1px solid #ffd70018" }}>
+        <span style={{ fontSize:9, color:"#d4a017", fontFamily:"'Rajdhani',sans-serif", fontWeight:700, letterSpacing:"0.06em" }}>DAILY LIMIT - RESETS MIDNIGHT</span>
+      </div>
+      <div className="flex-1 overflow-y-auto px-3 py-3" style={{ scrollbarWidth:"none" }}>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+          {GUILD_SHOP_DATA.map(item => (
+            <div key={item.id} style={{ background:"#0a0720", border:`1px solid ${item.color}33`, clipPath:"polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%)" }}>
+              <div style={{ height:2, background:`linear-gradient(90deg,transparent,${item.color}66,transparent)` }}/>
+              <div className="flex flex-col items-center gap-2 p-3">
+                <div className="relative flex items-center justify-center" style={{ width:54, height:54 }}>
+                  <svg viewBox="0 0 54 54" className="absolute inset-0 w-full h-full">
+                    <polygon points="14,1 40,1 53,14 53,40 40,53 14,53 1,40 1,14" fill="#0d0825" stroke={item.color} strokeWidth="1.1" opacity="0.65"/>
+                  </svg>
+                  <span style={{ position:"relative", fontSize:26, filter:`drop-shadow(0 0 8px ${item.color}55)` }}>{item.icon}</span>
+                </div>
+                <span style={{ fontSize:10, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:"#c8b8e8", textAlign:"center", lineHeight:1.2 }}>{item.name}</span>
+                <div className="flex items-center gap-1">
+                  <span style={{ fontSize:12, color:item.color, fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>🪙 {item.price.toLocaleString()}</span>
+                </div>
+                <button className="w-full flex items-center justify-center" style={{ height:32, background:`${item.color}11`, border:`1px solid ${item.color}66`, clipPath:"polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)" }}>
+                  <span style={{ fontSize:9.5, fontFamily:"'Cinzel',serif", fontWeight:700, color:item.color, letterSpacing:"0.06em" }}>PURCHASE</span>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GuildScheduleModal({ onClose }: { onClose: () => void }) {
+  const [schedTab, setSchedTab] = useState<"daily"|"weekly">("daily");
+  return (
+    <div className="absolute inset-0 z-50 flex flex-col" style={{ background:"linear-gradient(180deg,#04020f 0%,#08031a 100%)" }}>
+      <div className="relative flex items-center px-4 flex-shrink-0" style={{ height:56, background:"#06041488", borderBottom:"1px solid #aa44ff22" }}>
+        <div style={{ width:3, height:22, background:"linear-gradient(180deg,#aa44ff,#4422aa)", borderRadius:2, marginRight:10 }}/>
+        <span style={{ fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:14, color:"#c8a0ff", letterSpacing:"0.05em", flex:1 }}>EVENT SCHEDULE</span>
+        <button onClick={onClose} className="flex items-center justify-center" style={{ width:28, height:24, background:"#0a0820", border:"1px solid #aa44ff33", clipPath:"polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)" }}><X size={12} style={{ color:"#7050a0" }}/></button>
+      </div>
+      <div className="relative flex flex-shrink-0" style={{ height:38, background:"#08041a", borderBottom:"1px solid #2a184555" }}>
+        {(["daily","weekly"] as const).map(t => (
+          <button key={t} onClick={() => setSchedTab(t)} className="flex-1 flex items-center justify-center relative">
+            <span style={{ fontSize:10, fontFamily:"'Cinzel',serif", fontWeight:700, color:schedTab===t?"#aa44ff":"#3a2858", letterSpacing:"0.05em" }}>{t.charAt(0).toUpperCase()+t.slice(1)}</span>
+            {schedTab===t && <div style={{ position:"absolute", bottom:0, left:"25%", right:"25%", height:1.5, background:"linear-gradient(90deg,transparent,#aa44ff,transparent)" }}/>}
+          </button>
+        ))}
+      </div>
+      <div className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-3" style={{ scrollbarWidth:"none" }}>
+        {schedTab==="daily" ? GUILD_SCHEDULE_DATA.map(evt => (
+          <div key={evt.id} style={{ background:"#0a0720", border:"1px solid #3d206044", clipPath:"polygon(0 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%)" }}>
+            <div style={{ height:2, background:`linear-gradient(90deg,transparent,${evt.status==="available"?"#22dd6e55":"#3d206044"},transparent)` }}/>
+            <div className="flex items-center gap-3 px-4 py-3">
+              <div className="relative flex-shrink-0 flex items-center justify-center" style={{ width:46, height:46 }}>
+                <svg viewBox="0 0 46 46" className="absolute inset-0 w-full h-full"><polygon points="12,1 34,1 45,12 45,34 34,45 12,45 1,34 1,12" fill="#0d0825" stroke={evt.status==="available"?"#22dd6e":"#3d2060"} strokeWidth="0.9" opacity="0.65"/></svg>
+                <span style={{ position:"relative", fontSize:22, filter:evt.status==="available"?"drop-shadow(0 0 6px #22dd6e44)":undefined }}>{evt.icon}</span>
+              </div>
+              <div className="flex-1">
+                <span style={{ fontSize:11, fontFamily:"'Cinzel',serif", fontWeight:700, color:evt.status==="available"?"#d0c0f0":"#4a3870", letterSpacing:"0.03em", lineHeight:1, display:"block" }}>{evt.name}</span>
+                <span style={{ fontSize:8.5, color:"#5a4080", fontFamily:"'Rajdhani',sans-serif", fontWeight:600, marginTop:2, display:"block" }}>{evt.type} {evt.status==="available"?evt.time:`Next: ${evt.time}`}</span>
+              </div>
+              {evt.status==="available" ? (
+                <button className="flex items-center justify-center px-5 flex-shrink-0" style={{ height:34, background:"linear-gradient(90deg,#0a2a10,#0d3a18)", border:"1px solid #22dd6e55", clipPath:"polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)" }}>
+                  <span style={{ fontSize:11, fontFamily:"'Cinzel',serif", fontWeight:700, color:"#22dd6e", letterSpacing:"0.08em" }}>GO</span>
+                </button>
+              ) : (
+                <div className="flex items-center justify-center px-3 flex-shrink-0" style={{ height:34, background:"#0a0720", border:"1px solid #2a184544" }}>
+                  <span style={{ fontSize:8, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:"#3a2858" }}>Coming soon</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )) : (
+          <div className="flex flex-col items-center justify-center py-10 gap-3">
+            <span style={{ fontSize:38, filter:"drop-shadow(0 0 12px #aa44ff33)" }}>📅</span>
+            <p style={{ fontSize:10, fontFamily:"'Cinzel',serif", fontWeight:700, color:"#3a2858", letterSpacing:"0.07em" }}>NO WEEKLY EVENTS</p>
+            <p style={{ fontSize:9, color:"#2a1845", fontFamily:"'Rajdhani',sans-serif", fontWeight:500 }}>Check back each week for new events.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function GuildAcademyModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="absolute inset-0 z-50 flex flex-col" style={{ background:"linear-gradient(180deg,#04020f 0%,#08031a 100%)" }}>
+      <div className="relative flex items-center px-4 flex-shrink-0" style={{ height:56, background:"#06041488", borderBottom:"1px solid #448aff22" }}>
+        <div style={{ width:3, height:22, background:"linear-gradient(180deg,#88aaff,#1a3a88)", borderRadius:2, marginRight:10 }}/>
+        <div className="flex-1">
+          <span style={{ fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:14, color:"#88aaff", letterSpacing:"0.05em" }}>GUILD ACADEMY</span>
+          <div className="mt-0.5"><span style={{ fontSize:8.5, color:"#5050a0", fontFamily:"'Rajdhani',sans-serif", fontWeight:600 }}>Shared buffs for all members</span></div>
+        </div>
+        <button onClick={onClose} className="flex items-center justify-center" style={{ width:28, height:24, background:"#0a0820", border:"1px solid #448aff33", clipPath:"polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)" }}><X size={12} style={{ color:"#5070a0" }}/></button>
+      </div>
+      <div className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-3" style={{ scrollbarWidth:"none" }}>
+        {GUILD_RESEARCH_DATA.map(r => (
+          <div key={r.id} style={{ background:"#0a0720", border:`1px solid ${r.color}22`, clipPath:"polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%)" }}>
+            <div style={{ height:2, background:`linear-gradient(90deg,transparent,${r.color}55,transparent)` }}/>
+            <div className="flex items-center gap-3 px-3 py-3">
+              <div className="relative flex-shrink-0 flex items-center justify-center" style={{ width:44, height:44 }}>
+                <svg viewBox="0 0 44 44" className="absolute inset-0 w-full h-full"><polygon points="11,1 33,1 43,11 43,33 33,43 11,43 1,33 1,11" fill="#0d0825" stroke={r.color} strokeWidth="1.1" opacity="0.65"/></svg>
+                <span style={{ position:"relative", fontSize:21, filter:`drop-shadow(0 0 6px ${r.color}44)` }}>{r.icon}</span>
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-1">
+                  <span style={{ fontSize:11, fontFamily:"'Cinzel',serif", fontWeight:700, color:"#d0c0f0", letterSpacing:"0.03em" }}>{r.name}</span>
+                  <span style={{ fontSize:9, color:r.color, fontFamily:"'Rajdhani',sans-serif", fontWeight:700 }}>Lv.{r.level}/{r.max}</span>
+                </div>
+                <p style={{ fontSize:8.5, color:"#5a4080", fontFamily:"'Rajdhani',sans-serif", fontWeight:500, marginBottom:6, lineHeight:1.45 }}>{r.desc}</p>
+                <div style={{ height:4, background:"#0a0820", border:`1px solid ${r.color}22`, clipPath:"polygon(3px 0%,100% 0%,calc(100% - 3px) 100%,0% 100%)" }}>
+                  <div style={{ height:"100%", width:`${(r.level/r.max)*100}%`, background:`linear-gradient(90deg,${r.color}55,${r.color})`, boxShadow:`0 0 4px ${r.color}44` }}/>
+                </div>
+              </div>
+              <button className="flex-shrink-0 flex items-center justify-center px-3 ml-2" style={{ height:38, background:`${r.color}11`, border:`1px solid ${r.color}55`, clipPath:"polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)" }}>
+                <span style={{ fontSize:9, fontFamily:"'Cinzel',serif", fontWeight:700, color:r.color, letterSpacing:"0.04em" }}>UPGRADE</span>
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function GuildScreen({ onBack }: { onBack: () => void }) {
+  const [modal, setModal] = useState<GuildModal>(null);
+  const areas = [
+    { id:"boss"     as const, icon:"🔥", label:"Guild Boss",     subtitle:"Lava Behemoth",  color:"#ff4422", badge:"Active" },
+    { id:"shop"     as const, icon:"🛒", label:"Guild Shop",     subtitle:"4 items listed", color:"#ffd700" },
+    { id:"academy"  as const, icon:"📚", label:"Guild Academy",  subtitle:"4 researches",   color:"#448aff" },
+    { id:"schedule" as const, icon:"📅", label:"Guild Schedule", subtitle:"2 events today", color:"#aa44ff" },
+  ] as const;
+  return (
+    <div className="absolute inset-0 flex flex-col" style={{ background:"#06040f" }}>
+      <div className="absolute inset-0"><GuildBackground/></div>
+      <div className="relative z-30 flex items-center gap-2 px-3 flex-shrink-0" style={{ height:64 }}>
+        <div className="absolute inset-0" style={{ background:"linear-gradient(180deg,#0d0825cc 0%,#08041acc 100%)", borderBottom:"1px solid #2a184555" }}>
+          <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 390 64" preserveAspectRatio="none">
+            <polyline points="0,14 0,1 14,1" fill="none" stroke="#d4a017" strokeWidth="1.1" opacity="0.45"/>
+            <polyline points="376,1 390,1 390,14" fill="none" stroke="#d4a017" strokeWidth="1.1" opacity="0.45"/>
+            <polyline points="0,50 0,63 14,63" fill="none" stroke="#d4a017" strokeWidth="1.1" opacity="0.45"/>
+            <polyline points="376,63 390,63 390,50" fill="none" stroke="#d4a017" strokeWidth="1.1" opacity="0.45"/>
+          </svg>
+        </div>
+        <div className="relative flex-shrink-0"><GuildEmblem size={44}/></div>
+        <div className="relative flex-1 flex flex-col justify-center">
+          <span style={{ fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:15, color:"#ffd700", letterSpacing:"0.07em", lineHeight:1 }}>IRON PACT</span>
+          <span style={{ fontSize:8.5, fontFamily:"'Rajdhani',sans-serif", fontWeight:600, color:"#6050a0", lineHeight:1.5 }}>Lv.10 · 72/90 Members</span>
+        </div>
+        <div className="relative flex flex-col items-end gap-1.5 flex-shrink-0">
+          <div className="flex items-center gap-1 px-2" style={{ height:20, background:"#0a0720", border:"1px solid #ffd70033", clipPath:"polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)" }}>
+            <span style={{ fontSize:8, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:"#ffd700" }}>🪙 48,360</span>
+          </div>
+          <button onClick={onBack} className="flex items-center justify-center px-3" style={{ height:22, background:"#0a0820", border:"1px solid #3d206077", clipPath:"polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%)" }}>
+            <span style={{ fontSize:8.5, fontFamily:"'Rajdhani',sans-serif", fontWeight:700, color:"#7060a0", letterSpacing:"0.05em" }}>Back</span>
+          </button>
+        </div>
+      </div>
+      <div className="relative z-10 flex-1 overflow-y-auto flex flex-col px-4 py-3 gap-3" style={{ scrollbarWidth:"none" }}>
+        <GuildHallCard onClick={() => setModal("hall")}/>
+        <div className="flex items-center gap-2">
+          <div style={{ flex:1, height:1, background:"linear-gradient(90deg,transparent,#3d2060)" }}/>
+          <span style={{ fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:8.5, color:"#4a3870", letterSpacing:"0.12em" }}>GUILD AREAS</span>
+          <div style={{ flex:1, height:1, background:"linear-gradient(90deg,#3d2060,transparent)" }}/>
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+          {areas.map(a => (
+            <GuildAreaTile key={a.id} icon={a.icon} label={a.label} subtitle={a.subtitle} color={a.color} badge={"badge" in a ? a.badge : undefined} onClick={() => setModal(a.id)}/>
+          ))}
+        </div>
+      </div>
+      {modal === "hall"     && <GuildHallModal     onClose={() => setModal(null)}/>}
+      {modal === "boss"     && <GuildBossModal     onClose={() => setModal(null)}/>}
+      {modal === "shop"     && <GuildShopModal     onClose={() => setModal(null)}/>}
+      {modal === "academy"  && <GuildAcademyModal  onClose={() => setModal(null)}/>}
+      {modal === "schedule" && <GuildScheduleModal onClose={() => setModal(null)}/>}
+    </div>
+  );
+}
+
 // ─── BATTLE SHARED COMPONENTS ─────────────────────────────────────────────────
 function SkillBtn({ icon, locked = false, idx, levelReq }: { icon?: React.ReactNode; locked?: boolean; idx: number; levelReq?: number }) {
   const [pressed, setPressed] = useState(false);
@@ -1180,6 +1746,7 @@ export default function App() {
   useEffect(() => { if (activeNav !== "battle") setBattleView("farming"); }, [activeNav]);
 
   const isHeroes = activeNav === "heroes";
+  const isGuild  = activeNav === "guild";
   const isBattle = activeNav === "battle";
   const isDungeon = isBattle && battleView === "dungeon";
   const isLobby = isBattle && battleView === "lobby";
@@ -1207,8 +1774,9 @@ export default function App() {
 
         {isHeroes && <HeroesScreen onBack={() => setActiveNav("battle")}/>}
         {isDungeon && <DungeonScreen onClose={() => setBattleView("lobby")}/>}
+        {isGuild && <GuildScreen onBack={() => setActiveNav("battle")}/>}
 
-        {!isHeroes && !isDungeon && (
+        {!isHeroes && !isDungeon && !isGuild && (
           <>
             {/* TOP HUD */}
             <div className="relative z-30 flex items-start gap-2 px-2 pt-2 pb-1" style={{ minHeight: 74 }}>
