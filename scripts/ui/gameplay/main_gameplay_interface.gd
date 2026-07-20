@@ -30,6 +30,7 @@ var _battle_plaque := ""
 
 
 func _ready() -> void:
+	_dungeon_flow.bind_session(_game_session)
 	_bind_profile(_game_session.profile)
 	_game_session.profile_replaced.connect(_bind_profile)
 	_apply_safe_area()

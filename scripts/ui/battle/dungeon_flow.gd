@@ -6,6 +6,7 @@ signal closed
 
 const COMBAT_VIEW_SCENE := preload("res://scenes/ui/gameplay/combat_view.tscn")
 const SKILL_DOCK_SCENE := preload("res://scenes/ui/gameplay/skill_dock.tscn")
+const COMBAT_CONTROLLER_SCRIPT := preload("res://scripts/combat/combat_controller.gd")
 
 enum View { LIST, LEVEL, COMBAT }
 
@@ -14,14 +15,17 @@ var _dungeons: Array[Dictionary] = []
 var _selected: Dictionary = {}
 var _activity_state: ActivityState
 var _profile: PlayerProfile
+var _session: GameSession
 var _level := 1
-var _phase := 1
-var _enemy_hp := 100
 var _combat_timer: Timer
+var _combat_controller: COMBAT_CONTROLLER_SCRIPT
+var _combat_view: CombatView
+var _skill_dock: SkillDock
 var _enemy_fill: ColorRect
 var _enemy_hp_label: Label
-var _phase_label: Label
-var _phase_bars: Array[ColorRect] = []
+var _hero_hp_fill: ColorRect
+var _hero_mp_fill: ColorRect
+var _hero_resource_label: Label
 var _modal: Control
 
 
@@ -47,6 +51,11 @@ func bind_profile(profile: PlayerProfile) -> void:
 	bind_activity_state(profile.activity)
 
 
+func bind_session(session: GameSession) -> void:
+	_session = session
+	bind_profile(session.profile)
+
+
 func _on_activity_changed(_change_kind: StringName) -> void:
 	if visible and _view != View.COMBAT:
 		_rebuild()
@@ -65,8 +74,10 @@ func _clear_view() -> void:
 		_combat_timer.stop()
 		_combat_timer.queue_free()
 	_combat_timer = null
+	_combat_controller = null
+	_combat_view = null
+	_skill_dock = null
 	_modal = null
-	_phase_bars.clear()
 	for child in get_children():
 		child.queue_free()
 
@@ -272,22 +283,21 @@ func _show_level_pick() -> void:
 func _show_combat() -> void:
 	_view = View.COMBAT
 	_clear_view()
-	_phase = 1
-	_enemy_hp = 100
 	var backdrop := ColorRect.new()
 	backdrop.color = UIPalette.CANVAS
 	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
 	backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(backdrop)
 
-	var combat: CombatView = COMBAT_VIEW_SCENE.instantiate()
-	combat.position = Vector2(0, 48)
-	combat.size = Vector2(size.x, size.y - 112)
-	combat.auto_enabled = true
-	add_child(combat)
+	_combat_view = COMBAT_VIEW_SCENE.instantiate()
+	_combat_view.auto_enabled = false
+	_combat_view.position = Vector2(0, 48)
+	_combat_view.size = Vector2(size.x, size.y - 112)
+	add_child(_combat_view)
 
 	_add_combat_header()
 	_add_enemy_ui()
+	_add_hero_ui()
 
 	var leave := _button("Leave", 10, Color("#6050A0"))
 	leave.position = Vector2(size.x - 68, size.y - 98)
@@ -295,24 +305,44 @@ func _show_combat() -> void:
 	leave.pressed.connect(_show_leave_modal)
 	add_child(leave)
 
-	var dock: SkillDock = SKILL_DOCK_SCENE.instantiate()
+	_skill_dock = SKILL_DOCK_SCENE.instantiate()
 	if _profile != null:
-		dock.bind_profile(_profile)
-	dock.position = Vector2(0, size.y - 64)
-	dock.size = Vector2(size.x, 64)
-	dock.skill_pressed.connect(func(_slot: int) -> void: combat.play_attack())
-	dock.auto_toggled.connect(func(active: bool) -> void:
-		combat.auto_enabled = active
-		if is_instance_valid(_combat_timer):
-			_combat_timer.paused = not active
-	)
-	add_child(dock)
+		_skill_dock.bind_profile(_profile)
+	_skill_dock.position = Vector2(0, size.y - 64)
+	_skill_dock.size = Vector2(size.x, 64)
+	_skill_dock.skill_pressed.connect(_on_skill_pressed)
+	_skill_dock.auto_toggled.connect(_on_auto_toggled)
+	add_child(_skill_dock)
+
+	_combat_controller = _session.combat if _session != null else COMBAT_CONTROLLER_SCRIPT.new()
+	_connect_combat_signals()
+	if _session != null:
+		_session.start_combat(_selected["enemy_id"], _level, _level * 1009 + 17)
+	else:
+		var profile := _profile if _profile != null else PlayerProfile.new()
+		var enemy_definition := GameCatalog.enemy(_selected["enemy_id"])
+		_combat_controller.start(profile.combat_snapshot(), enemy_definition.combat_snapshot(_level), _level * 1009 + 17)
 
 	_combat_timer = Timer.new()
-	_combat_timer.wait_time = 0.28
+	_combat_timer.wait_time = 0.05
 	_combat_timer.timeout.connect(_on_combat_tick)
 	add_child(_combat_timer)
 	_combat_timer.start()
+
+
+func _connect_combat_signals() -> void:
+	if not _combat_controller.action_started.is_connected(_on_action_started):
+		_combat_controller.action_started.connect(_on_action_started)
+	if not _combat_controller.damage_dealt.is_connected(_on_damage_dealt):
+		_combat_controller.damage_dealt.connect(_on_damage_dealt)
+	if not _combat_controller.healing_applied.is_connected(_on_healing_applied):
+		_combat_controller.healing_applied.connect(_on_healing_applied)
+	if not _combat_controller.status_added.is_connected(_on_status_added):
+		_combat_controller.status_added.connect(_on_status_added)
+	if not _combat_controller.combat_finished.is_connected(_on_combat_finished):
+		_combat_controller.combat_finished.connect(_on_combat_finished)
+	if not _combat_controller.state_changed.is_connected(_on_combat_state_changed):
+		_combat_controller.state_changed.connect(_on_combat_state_changed)
 
 
 func _add_combat_header() -> void:
@@ -326,20 +356,10 @@ func _add_combat_header() -> void:
 	title_label.position = Vector2(45, 5)
 	title_label.size = Vector2(size.x - 90, 20)
 	header.add_child(title_label)
-	var bar_w := 22.0
-	var start_x := size.x * 0.5 - 64.0
-	for i in range(5):
-		var bar := ColorRect.new()
-		bar.color = _selected["color"] if i == 0 else Color("#1A0A3A")
-		bar.position = Vector2(start_x + i * (bar_w + 8), 29)
-		bar.size = Vector2(bar_w, 4)
-		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		header.add_child(bar)
-		_phase_bars.append(bar)
-	_phase_label = _label("Phase 1/5", false, 9, Color("#6050A0"))
-	_phase_label.position = Vector2(start_x + 5 * 30, 23)
-	_phase_label.size = Vector2(64, 16)
-	header.add_child(_phase_label)
+	var encounter := _label("REAL-TIME ENCOUNTER", false, 9, _selected["color"], HORIZONTAL_ALIGNMENT_CENTER)
+	encounter.position = Vector2(80, 26)
+	encounter.size = Vector2(size.x - 160, 16)
+	header.add_child(encounter)
 	var count := _label("1 Enemy", false, 9, Color("#C0B0E0"), HORIZONTAL_ALIGNMENT_CENTER)
 	count.position = Vector2(size.x - 62, 9)
 	count.size = Vector2(52, 20)
@@ -376,54 +396,129 @@ func _add_enemy_ui() -> void:
 	_enemy_fill.position = Vector2.ZERO
 	_enemy_fill.size = hp_bg.size
 	hp_bg.add_child(_enemy_fill)
-	_enemy_hp_label = _label("100/100", false, 8, Color("#FF7755"))
+	_enemy_hp_label = _label("--/--", false, 8, Color("#FF7755"))
 	_enemy_hp_label.position = Vector2(0, 89)
 	_enemy_hp_label.size = Vector2(92, 16)
 	enemy.add_child(_enemy_hp_label)
 
 
+func _add_hero_ui() -> void:
+	var panel := Control.new()
+	panel.position = Vector2(14, size.y - 122)
+	panel.size = Vector2(150, 48)
+	add_child(panel)
+	var name_label := _label("FERN", true, 9, UIPalette.GOLD)
+	name_label.position = Vector2.ZERO
+	name_label.size = Vector2(44, 16)
+	panel.add_child(name_label)
+	_hero_resource_label = _label("--", false, 8, Color("#A0F8E8"), HORIZONTAL_ALIGNMENT_RIGHT)
+	_hero_resource_label.position = Vector2(40, 0)
+	_hero_resource_label.size = Vector2(110, 16)
+	panel.add_child(_hero_resource_label)
+	_hero_hp_fill = _resource_bar(panel, Vector2(0, 20), Color("#22DD6E"))
+	_hero_mp_fill = _resource_bar(panel, Vector2(0, 31), Color("#448AFF"))
+
+
+func _resource_bar(parent: Control, at: Vector2, color: Color) -> ColorRect:
+	var background := ColorRect.new()
+	background.color = Color("#08041A")
+	background.position = at
+	background.size = Vector2(150, 7)
+	parent.add_child(background)
+	var fill := ColorRect.new()
+	fill.color = color
+	fill.size = background.size
+	background.add_child(fill)
+	return fill
+
+
 func _on_combat_tick() -> void:
-	_enemy_hp = maxi(0, _enemy_hp - 8)
-	_enemy_fill.size.x = 92.0 * float(_enemy_hp) / 100.0
-	_enemy_hp_label.text = "%d/100" % _enemy_hp
-	if _enemy_hp > 0:
+	if _combat_controller == null:
 		return
-	if _phase < 5:
-		_phase += 1
-		_enemy_hp = 100
-		_phase_label.text = "Phase %d/5" % _phase
-		for i in range(_phase_bars.size()):
-			_phase_bars[i].color = _selected["color"] if i < _phase else Color("#1A0A3A")
-	else:
+	_combat_controller.advance(_combat_timer.wait_time)
+	if is_instance_valid(_skill_dock):
+		for i in range(6):
+			_skill_dock.set_cooldown(i, _combat_controller.cooldown_fraction(i))
+
+
+func _on_skill_pressed(slot_index: int) -> void:
+	var outcome: StateMutationResult = _combat_controller.activate_skill(slot_index)
+	if not outcome.ok:
+		_combat_view.show_status(outcome.message.to_upper(), true)
+
+
+func _on_auto_toggled(active: bool) -> void:
+	if _combat_controller != null:
+		_combat_controller.auto_enabled = active
+
+
+func _on_action_started(actor_id: StringName, _target_id: StringName, _action_id: StringName) -> void:
+	if actor_id == COMBAT_CONTROLLER_SCRIPT.HERO_ID:
+		_combat_view.play_attack()
+
+
+func _on_damage_dealt(_source_id: StringName, target_id: StringName, amount: int, critical: bool, blocked: bool, evaded: bool) -> void:
+	_combat_view.show_damage(target_id == COMBAT_CONTROLLER_SCRIPT.HERO_ID, amount, critical, blocked, evaded)
+
+
+func _on_healing_applied(_source_id: StringName, target_id: StringName, amount: int) -> void:
+	_combat_view.show_healing(target_id == COMBAT_CONTROLLER_SCRIPT.HERO_ID, amount)
+
+
+func _on_status_added(_source_id: StringName, target_id: StringName, status_id: StringName) -> void:
+	_combat_view.show_status(String(status_id).replace("_", " ").to_upper(), target_id == COMBAT_CONTROLLER_SCRIPT.HERO_ID)
+
+
+func _on_combat_state_changed(state: Dictionary) -> void:
+	var hero: Dictionary = state.get("hero", {})
+	var enemies: Array = state.get("enemies", [])
+	if hero.is_empty() or enemies.is_empty():
+		return
+	var enemy: Dictionary = enemies[0]
+	var enemy_ratio := float(enemy["hp"]) / maxf(1.0, float(enemy["max_hp"]))
+	_enemy_fill.size.x = 92.0 * enemy_ratio
+	_enemy_hp_label.text = "%d/%d" % [int(round(enemy["hp"])), int(round(enemy["max_hp"]))]
+	_hero_hp_fill.size.x = 150.0 * float(hero["hp"]) / maxf(1.0, float(hero["max_hp"]))
+	_hero_mp_fill.size.x = 150.0 * float(hero["mp"]) / maxf(1.0, float(hero["max_mp"]))
+	_hero_resource_label.text = "HP %d/%d  MP %d/%d" % [
+		int(round(hero["hp"])), int(round(hero["max_hp"])),
+		int(round(hero["mp"])), int(round(hero["max_mp"])),
+	]
+
+
+func _on_combat_finished(outcome: StringName) -> void:
+	if is_instance_valid(_combat_timer):
 		_combat_timer.stop()
-		_show_victory()
+	_show_combat_result(outcome)
 
 
-func _show_victory() -> void:
+func _show_combat_result(outcome: StringName) -> void:
 	var panel := Panel.new()
 	panel.position = Vector2(55, size.y * 0.38)
-	panel.size = Vector2(size.x - 110, 150)
+	panel.size = Vector2(size.x - 110, 166)
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color("#0D0822", 0.92)
-	style.border_color = Color(UIPalette.GOLD, 0.4)
+	style.border_color = Color(UIPalette.GOLD if outcome == &"victory" else Color("#AA4466"), 0.5)
 	style.set_border_width_all(1)
 	panel.add_theme_stylebox_override("panel", style)
 	add_child(panel)
-	var clear := _label("DUNGEON CLEAR!", true, 15, UIPalette.GOLD, HORIZONTAL_ALIGNMENT_CENTER)
+	var clear := _label("DUNGEON CLEAR!" if outcome == &"victory" else "DEFEATED", true, 15, UIPalette.GOLD if outcome == &"victory" else Color("#FF7799"), HORIZONTAL_ALIGNMENT_CENTER)
 	clear.position = Vector2(10, 24)
 	clear.size = Vector2(panel.size.x - 20, 28)
 	panel.add_child(clear)
-	var reward := _label("Rewards: %s" % _selected["reward_description"], false, 10, Color("#8066C0"), HORIZONTAL_ALIGNMENT_CENTER)
+	var result_copy := "Rewards preview: %s" % _selected["reward_description"] if outcome == &"victory" else "Adjust your loadout or choose a lower level."
+	var reward := _label(result_copy, false, 10, Color("#8066C0"), HORIZONTAL_ALIGNMENT_CENTER)
 	reward.position = Vector2(10, 55)
-	reward.size = Vector2(panel.size.x - 20, 24)
+	reward.size = Vector2(panel.size.x - 20, 36)
+	reward.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	panel.add_child(reward)
-	var collect := _button("COLLECT", 11, Color("#E0D0FF"))
-	collect.fill_top = Color("#5533CC")
-	collect.fill_bottom = Color("#2A0A6A")
-	collect.position = Vector2((panel.size.x - 110) * 0.5, 92)
-	collect.size = Vector2(110, 34)
-	collect.pressed.connect(_show_list)
-	panel.add_child(collect)
+	var primary := _button("CONTINUE" if outcome == &"victory" else "RETRY", 11, Color("#E0D0FF"))
+	primary.fill_top = Color("#5533CC")
+	primary.fill_bottom = Color("#2A0A6A")
+	primary.position = Vector2(18, 106)
+	primary.size = Vector2(panel.size.x - 36, 34)
+	primary.pressed.connect(_show_list if outcome == &"victory" else _show_combat)
+	panel.add_child(primary)
 
 
 # Leave modal ----------------------------------------------------------------
@@ -466,7 +561,7 @@ func _show_leave_modal() -> void:
 	title_label.position = Vector2(16, 43)
 	title_label.size = Vector2(258, 26)
 	panel.add_child(title_label)
-	var body := _label("This attempt has already been used.\nLeave without claiming rewards?", false, 10, Color("#5A4888"), HORIZONTAL_ALIGNMENT_CENTER)
+	var body := _label("Current combat progress will be lost.\nLeave this encounter?", false, 10, Color("#5A4888"), HORIZONTAL_ALIGNMENT_CENTER)
 	body.position = Vector2(20, 76)
 	body.size = Vector2(250, 42)
 	panel.add_child(body)

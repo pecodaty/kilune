@@ -1,6 +1,6 @@
 # Next Steps — Playable Loop Implementation Plan
 
-Status: In progress — Phase 1 complete
+Status: In progress — Phases 1–2 complete
 Scope: First playable loop, excluding Stages and main progression
 
 ## Objective
@@ -66,6 +66,11 @@ Exit criteria:
 
 Goal: make one encounter genuinely interactive.
 
+Status: **Complete (2026-07-19).** Dungeon encounters now run through a deterministic,
+presentation-independent `CombatController`. Manual and Auto input share the same action rules;
+all eight current skills have functional effects. Advanced skill-specific animation and VFX remain
+Phase 5 presentation work.
+
 ### Combat engine
 
 | Work | Priority |
@@ -107,11 +112,11 @@ Combat logic must remain independent from presentation. `CombatView` should cons
 
 Exit criteria:
 
-- Fern can fight one enemy manually.
-- HP, MP, cooldowns, equipment, and calculated Stats affect the result.
-- Auto mode can finish the same battle without bypassing combat rules.
-- Victory and defeat are caused by combat state rather than timers.
-- Combat calculations have deterministic automated tests.
+- [x] Fern can fight one enemy manually.
+- [x] HP, MP, cooldowns, equipment, skill ranks, mastery, and calculated Stats affect the result.
+- [x] Auto mode finishes the same battle without bypassing combat rules.
+- [x] Victory and defeat are caused by combat state rather than presentation timers.
+- [x] Combat calculations have deterministic automated tests.
 
 ## Phase 3 — Repeatable Reward Loop
 

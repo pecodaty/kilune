@@ -1,9 +1,7 @@
 class_name CombatView
 extends Control
 ## The combat stage: background, ground shadow, hero sprite and floating text.
-## Visual only — combat logic lives outside and drives this view through its API.
-
-signal attack_landed()
+## Visual only — CombatController drives this view through its public API.
 
 const WARRIOR_IDLE: Texture2D = preload("res://assets/heroes/warrior/idle.png")
 const WARRIOR_ATTACK: Texture2D = preload("res://assets/heroes/warrior/attack.png")
@@ -22,8 +20,8 @@ var _shadow: Control
 var _auto_timer: Timer
 
 var auto_enabled := true:
-	set(v):
-		auto_enabled = v
+	set(value):
+		auto_enabled = value
 		_update_auto_timer()
 
 
@@ -48,10 +46,9 @@ func _ready() -> void:
 	_hero.animation_finished.connect(_on_animation_finished)
 	add_child(_hero)
 	_hero.play(&"idle")
-
 	_auto_timer = Timer.new()
 	_auto_timer.wait_time = 2.6
-	_auto_timer.timeout.connect(_on_auto_tick)
+	_auto_timer.timeout.connect(play_attack)
 	add_child(_auto_timer)
 	_update_auto_timer()
 
@@ -112,21 +109,29 @@ func play_attack() -> void:
 	if _hero.animation == &"attack" and _hero.is_playing():
 		return
 	_hero.play(&"attack")
-	# Damage number lands mid-swing.
-	get_tree().create_timer(0.45).timeout.connect(_on_attack_impact, CONNECT_ONE_SHOT)
 
 
 func spawn_floating_text(text: String, color: Color, at_position: Vector2) -> void:
 	FloatingText.spawn(self, text, color, at_position)
 
 
-func _on_attack_impact() -> void:
-	spawn_floating_text("+%d" % (180 + randi() % 120), Color("#FFDD44"), Vector2(size.x * 0.42, size.y * 0.62))
-	attack_landed.emit()
+func show_damage(target_is_hero: bool, amount: int, critical: bool, blocked: bool, evaded: bool) -> void:
+	var at := Vector2(size.x * 0.28, size.y * 0.60) if target_is_hero else Vector2(size.x * 0.76, size.y * 0.55)
+	if evaded:
+		spawn_floating_text("EVADE", UIPalette.CYAN, at)
+		return
+	var suffix := " CRIT" if critical else (" BLOCK" if blocked else "")
+	spawn_floating_text("-%d%s" % [amount, suffix], Color("#FF7755") if target_is_hero else Color("#FFDD44"), at)
 
 
-func _on_auto_tick() -> void:
-	play_attack()
+func show_healing(target_is_hero: bool, amount: int) -> void:
+	var at := Vector2(size.x * 0.28, size.y * 0.57) if target_is_hero else Vector2(size.x * 0.76, size.y * 0.52)
+	spawn_floating_text("+%d" % amount, Color("#55FF99"), at)
+
+
+func show_status(text: String, target_is_hero: bool) -> void:
+	var at := Vector2(size.x * 0.28, size.y * 0.53) if target_is_hero else Vector2(size.x * 0.76, size.y * 0.48)
+	spawn_floating_text(text, UIPalette.CYAN, at)
 
 
 func _on_animation_finished() -> void:
@@ -135,7 +140,7 @@ func _on_animation_finished() -> void:
 
 
 func _update_auto_timer() -> void:
-	if not is_node_ready():
+	if not is_node_ready() or _auto_timer == null:
 		return
 	if auto_enabled:
 		_auto_timer.start()

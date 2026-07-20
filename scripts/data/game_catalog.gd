@@ -88,7 +88,7 @@ static func dungeon_snapshots() -> Array[Dictionary]:
 		out.append({
 			"id":row[0], "name":row[1], "icon":row[2], "description":row[3],
 			"reward":reward_definition.display_name, "reward_description":reward_definition.description,
-			"power":enemy_definition.base_power, "enemy":enemy_definition.display_name,
+			"power":enemy_definition.base_power, "enemy_id":enemy_definition.id, "enemy":enemy_definition.display_name,
 			"enemy_icon":enemy_definition.icon, "color":enemy_definition.color,
 		})
 	return out

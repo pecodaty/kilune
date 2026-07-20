@@ -45,12 +45,8 @@ func combat_snapshot() -> Dictionary:
 				if skill_state["id"] == skill_id:
 					progression = skill_state
 					break
-			loadout.append({
-				"id":skill_id, "name":definition.display_name, "icon":definition.icon,
-				"effect":definition.effect_kind, "base_power":definition.base_power,
-				"mp_cost":definition.mp_cost, "cooldown":definition.cooldown,
-				"level":progression.get("level", 0), "mastery":progression.get("mastery", 0),
-			})
+			loadout.append(definition.combat_snapshot(
+				int(progression.get("level", 0)), int(progression.get("mastery", 0))))
 	return {"identity":hero.identity_snapshot(), "stats":hero.stats_snapshot(), "loadout":loadout}
 
 

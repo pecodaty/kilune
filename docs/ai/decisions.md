@@ -34,6 +34,27 @@ states. Typed enemy and reward definitions come from `GameCatalog`, while daily 
 from the profile's `ActivityState`. Combat behavior and reward application remain future phases;
 outward navigation is signal-based.
 
+## Deterministic combat architecture
+
+The scene-owned `GameSession` owns the active `CombatController`, while `DungeonFlow` starts and
+presents encounters through it. The controller is a `RefCounted`, scene-independent simulation
+object created from immutable profile and enemy snapshots; it never reads or mutates UI nodes.
+`CombatantState` owns encounter-local HP, MP, barriers, cooldowns,
+statuses, attack timing, and alive/dead state. A seeded `RandomNumberGenerator` makes critical,
+block, and evasion resolution reproducible in tests.
+
+Manual input and Auto mode both call the same validated skill activation API. Basic attacks,
+skills, enemy AI, periodic effects, buffs, debuffs, barriers, summons, and terminal conditions all
+advance through explicit delta steps. The controller emits typed action, damage, healing, resource,
+status, defeat, state, and finished signals. `DungeonFlow` translates those signals into
+`CombatView`, resource bars, cooldown masks, and result panels; presentation timers only schedule
+simulation steps and never decide victory or defeat.
+
+Combat starts from `PlayerProfile.combat_snapshot()` and typed `EnemyDefinition` data. Equipment,
+talent-derived Stats, skill ranks, mastery, MP costs, cooldown reduction, and the six-slot loadout
+therefore affect the encounter without duplicating progression state. Rewards and attempt
+consumption remain Phase 3 responsibilities.
+
 ## Guild navigation architecture
 
 Guild is a shared-shell destination: its custom header and content replace the

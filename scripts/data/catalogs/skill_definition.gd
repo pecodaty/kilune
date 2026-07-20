@@ -24,3 +24,11 @@ func _init(data: Dictionary = {}) -> void:
 
 func progression_snapshot(level: int, mastery: int) -> Dictionary:
 	return {"id":id, "name":display_name, "icon":icon, "section":section, "level":level, "mastery":mastery}
+
+
+func combat_snapshot(level: int, mastery: int) -> Dictionary:
+	return {
+		"id":id, "name":display_name, "icon":icon, "effect":effect_kind,
+		"base_power":base_power, "mp_cost":mp_cost, "cooldown":cooldown,
+		"level":level, "mastery":mastery,
+	}
