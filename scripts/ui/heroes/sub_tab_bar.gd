@@ -8,7 +8,7 @@ signal sub_tab_selected(tab_id: StringName)
 
 const HEIGHT := 54.0
 const TABS: Array[Array] = [
-	[&"class", "CLASS"],
+	[&"stats", "STATS"],
 	[&"skills", "SKILLS"],
 	[&"talents", "TALENTS"],
 	[&"equipment", "EQUIPMENT"],
@@ -16,7 +16,7 @@ const TABS: Array[Array] = [
 	[&"pets", "PETS"],
 ]
 
-@export var active: StringName = &"class":
+@export var active: StringName = &"stats":
 	set(v):
 		active = v
 		_refresh()

@@ -65,6 +65,7 @@ class ItemTile extends Control:
 	const HEIGHT := 52.0
 
 	var item: Dictionary
+	var equipped := false
 
 	func _ready() -> void:
 		custom_minimum_size = Vector2(0.0, HEIGHT)
@@ -89,6 +90,8 @@ class ItemTile extends Control:
 		draw_string(UIFonts.rajdhani_semibold(), Vector2(52.0, 37.0),
 			"Lv.%d · %s" % [item["lv"], String(item["rarity"]).capitalize()],
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 8, rc)
+		if equipped:
+			draw_string(UIFonts.rajdhani_bold(), Vector2(size.x - 94, 14), "EQUIPPED", HORIZONTAL_ALIGNMENT_RIGHT, 84, 7, UIPalette.GOLD)
 		# Two-stat preview, right aligned.
 		var stats: Array = item["stats"]
 		for i in range(mini(2, stats.size())):
@@ -105,10 +108,35 @@ class ItemTile extends Control:
 
 
 var _slots: Array[GearSlot] = []
+var _state: HeroProgressionState
 
 
 func _build() -> void:
 	panel.setup("HERO EQUIPMENT", "Forge", UIPalette.GOLD)
+	_populate()
+
+
+func bind_state(state: HeroProgressionState) -> void:
+	if _state != null and _state.changed.is_connected(_on_state_changed):
+		_state.changed.disconnect(_on_state_changed)
+	_state = state
+	_state.changed.connect(_on_state_changed)
+	_populate()
+
+
+func _on_state_changed(change_kind: StringName) -> void:
+	if change_kind == &"equipment":
+		_populate()
+
+
+func _populate() -> void:
+	if _state == null or panel == null:
+		return
+	var scroll := scroll_vertical
+	for child in panel.body.get_children():
+		panel.body.remove_child(child)
+		child.queue_free()
+	_slots.clear()
 
 	panel.body.add_child(_section_label("EQUIPPED GEAR"))
 	panel.body.add_child(_spacer(6))
@@ -120,7 +148,7 @@ func _build() -> void:
 	for slot in HeroData.gear_slots():
 		var cell := GearSlot.new()
 		cell.slot = slot
-		cell.item = HeroData.equipped_in(slot["id"])
+		cell.item = _state.equipped_item_in(slot["id"])
 		cell.pressed.connect(func() -> void: _on_slot_pressed(cell))
 		grid.add_child(cell)
 		_slots.append(cell)
@@ -132,17 +160,33 @@ func _build() -> void:
 	var list := VBoxContainer.new()
 	list.add_theme_constant_override("separation", 6)
 	list.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	for item in HeroData.inventory():
+	var equipped: Dictionary = _state.equipped_snapshot()
+	for item in _state.inventory_snapshot():
 		var tile := ItemTile.new()
 		tile.item = item
+		tile.equipped = equipped.get(item["slot"], &"") == item["id"]
 		tile.pressed.connect(func() -> void:
-			modal_requested.emit({"type": &"item", "data": tile.item}))
+			_show_item(tile.item))
 		list.add_child(tile)
 	panel.body.add_child(list)
+	set_deferred("scroll_vertical", scroll)
 
 
 func _on_slot_pressed(slot: GearSlot) -> void:
 	for cell in _slots:
 		cell.selected = cell == slot and not cell.item.is_empty()
 	if not slot.item.is_empty():
-		modal_requested.emit({"type": &"item", "data": slot.item})
+		_show_item(slot.item)
+
+
+func _show_item(item: Dictionary) -> void:
+	modal_requested.emit({"type":&"item", "data":item, "action":_state.item_action(item["id"])})
+
+
+func perform_item_action(action: StringName, item_id: StringName) -> void:
+	if _state == null:
+		return
+	if action == &"unequip":
+		_state.unequip_item(item_id)
+	elif action == &"equip" or action == &"replace":
+		_state.equip_item(item_id)

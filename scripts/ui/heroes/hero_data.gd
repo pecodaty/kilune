@@ -1,8 +1,7 @@
 class_name HeroData
 extends RefCounted
-## Reference-state hero data for the Heroes sub-tabs (skills, talents,
-## equipment, cards). Until hero/progression systems own this state, the
-## reference values from references/reference-code/src/app/App.tsx apply.
+## Immutable catalog/default data for Fern's Heroes screens. Mutable session
+## state lives in HeroProgressionState.
 
 const RARITY_COLORS := {
 	&"common": Color("#A090C0"),
@@ -20,17 +19,17 @@ static func rarity_color(rarity: StringName) -> Color:
 static func hero() -> Dictionary:
 	return {
 		"name": "FERN",
-		"level": 12,
-		"hp": 154,
-		"hp_max": 158,
-		"power": 808,
-		"class_id": &"druid",
+		"level": 32,
+		"title": "ADVENTURER",
+		"path": "Harmony",
+		"specialization": "Oracle",
+		"milestone": "Level 50 · Choose a Second Path or deepen Harmony",
 	}
 
 
 static func stats_line() -> String:
 	var h := hero()
-	return "Lv.%d · HP %d/%d · Power %d" % [h["level"], h["hp"], h["hp_max"], h["power"]]
+	return "Lv.%d · %s → %s" % [h["level"], h["path"], h["specialization"]]
 
 
 # ─── Skills sub-tab ──────────────────────────────────────────────────────────
@@ -44,42 +43,34 @@ static func cast_order() -> Array[Dictionary]:
 
 
 const PROGRESSION_LEVEL := 32
-const SKILL_POINTS_TOTAL := 32
-const TALENT_POINTS_TOTAL := 32
+const SKILL_POINTS_TOTAL := 32 # One point per current character level.
+const TALENT_POINTS_TOTAL := 32 # One point per current character level.
 
 
 static func skill_sections() -> Dictionary:
 	return {
-		&"path1": {"label":"PATH OF THE STORM", "color":Color("#22DD6E"), "unlock":1},
-		&"path2": {"label":"PATH OF JUDGMENT", "color":Color("#FF7733"), "unlock":50},
-		&"spec1": {"label":"ARCANE CONCLAVE", "color":Color("#448AFF"), "unlock":30},
-		&"spec2": {"label":"VOID COVENANT", "color":Color("#AA44FF"), "unlock":70},
+		&"path1": {"label":"HARMONY", "color":Color("#22DD6E"), "unlock":1, "chosen":true},
+		&"path2": {"label":"PATH II · UNCHOSEN", "color":Color("#66DDFF"), "unlock":50, "chosen":false},
+		&"spec1": {"label":"ORACLE", "color":Color("#448AFF"), "unlock":30, "chosen":true},
+		&"spec2": {"label":"SPECIALIZATION II · UNCHOSEN", "color":Color("#AA44FF"), "unlock":70, "chosen":false},
 	}
 
 
 static func active_skills() -> Array[Dictionary]:
 	return [
-		_skill(&"searing_bolt","Searing Bolt",&"fire",&"path1",5,0), _skill(&"frost_shield","Frost Shield",&"ice",&"path1",3,0),
-		_skill(&"wind_slash","Wind Slash",&"wind",&"path1",2,0), _skill(&"shadow_step","Shadow Step",&"shadow",&"path1",0,0),
-		_skill(&"thunder_clap","Thunder Clap",&"bolt",&"path2",0,0), _skill(&"void_surge","Void Surge",&"shadow",&"path2",0,0),
-		_skill(&"ember_nova","Ember Nova",&"sparkle",&"path2",0,0), _skill(&"iron_will","Iron Will",&"shield",&"path2",0,0),
-		_skill(&"arcane_burst","Arcane Burst",&"gem",&"spec1",3,1), _skill(&"mana_shield","Mana Shield",&"orb",&"spec1",1,0),
-		_skill(&"crystal_ward","Crystal Ward",&"gem",&"spec1",0,0), _skill(&"phase_shift","Phase Shift",&"sparkle",&"spec1",0,0),
-		_skill(&"soul_rend","Soul Rend",&"skull",&"spec2",0,0), _skill(&"blood_pact","Blood Pact",&"orb",&"spec2",0,0),
-		_skill(&"rift_step","Rift Step",&"shadow",&"spec2",0,0), _skill(&"null_zone","Null Zone",&"gem",&"spec2",0,0),
+		_skill(&"thorn_orb","Thorn Orb",&"leaf",&"path1",5,0), _skill(&"vine_web","Vine Web",&"globe",&"path1",3,0),
+		_skill(&"canopy_wave","Canopy Wave",&"wave",&"path1",2,0), _skill(&"send_companion","Send Companion",&"paw",&"path1",0,0),
+		_skill(&"dew_restore","Dew Restore",&"drop",&"spec1",3,1), _skill(&"spirit_link","Spirit Link",&"orb",&"spec1",1,0),
+		_skill(&"sanctuary_bloom","Sanctuary Bloom",&"flower",&"spec1",0,0), _skill(&"guiding_light","Guiding Light",&"star",&"spec1",0,0),
 	]
 
 
 static func equipped_skills() -> Array[StringName]:
-	return [&"searing_bolt", &"frost_shield", &"wind_slash", &"arcane_burst", &"mana_shield", &""]
+	return [&"thorn_orb", &"vine_web", &"canopy_wave", &"dew_restore", &"spirit_link", &""]
 
 
 static func skill_level_requirement(level: int) -> int:
-	if level <= 3: return 0
-	if level <= 5: return 20
-	if level <= 7: return 40
-	if level <= 9: return 60
-	return 80 if level == 10 else 90
+	return 90 if level > 10 else TraitRules.skill_level_requirement(level)
 
 
 static func _skill(id: StringName, name: String, icon: StringName, section: StringName, level: int, mastery: int) -> Dictionary:
@@ -88,35 +79,25 @@ static func _skill(id: StringName, name: String, icon: StringName, section: Stri
 
 static func talent_sections() -> Dictionary:
 	return {
-		&"path1":{"label":"PATH OF THE STORM", "short":"PATH I", "color":Color("#22DD6E"), "unlock":1, "nodes":12},
-		&"path2":{"label":"PATH OF JUDGMENT", "short":"PATH II", "color":Color("#FF7733"), "unlock":50, "nodes":12},
-		&"spec1":{"label":"ARCANE CONCLAVE", "short":"SPEC I", "color":Color("#448AFF"), "unlock":30, "nodes":8},
-		&"spec2":{"label":"VOID COVENANT", "short":"SPEC II", "color":Color("#AA44FF"), "unlock":70, "nodes":8},
+		&"path1":{"label":"HARMONY", "short":"PATH I", "color":Color("#22DD6E"), "unlock":1, "nodes":12, "chosen":true},
+		&"path2":{"label":"UNCHOSEN PATH", "short":"PATH II", "color":Color("#66DDFF"), "unlock":50, "nodes":12, "chosen":false},
+		&"spec1":{"label":"ORACLE", "short":"SPEC I", "color":Color("#448AFF"), "unlock":30, "nodes":8, "chosen":true},
+		&"spec2":{"label":"UNCHOSEN SPECIALIZATION", "short":"SPEC II", "color":Color("#AA44FF"), "unlock":70, "nodes":8, "chosen":false},
 	}
 
 
 static func constellation_talents() -> Array[Dictionary]:
 	return [
-		_talent(&"t_apex","Apex Predator",&"swords",&"keystone",&"path1",0), _talent(&"t_pow","Power Surge",&"fire",&"passive",&"path1",5),
-		_talent(&"t_vit","Vitality Core",&"heart",&"passive",&"path1",3), _talent(&"t_arc","Arcane Reserves",&"orb",&"utility",&"path1",2),
-		_talent(&"t_bh","Battle Hardened",&"shield",&"passive",&"path1",2), _talent(&"t_swift","Swift Strikes",&"bolt",&"passive",&"path1",1),
-		_talent(&"t_crit","Precision Strike",&"target",&"passive",&"path1",3), _talent(&"t_mind","Iron Mind",&"orb",&"passive",&"path1",1),
-		_talent(&"t_cd","Arcane Flow",&"sparkle",&"utility",&"path1",2), _talent(&"t_dodge","Shadow Walk",&"shadow",&"utility",&"path1",0),
-		_talent(&"t_res","Resilient Soul",&"heart",&"passive",&"path1",0), _talent(&"t_life","Blood Rush",&"bolt",&"passive",&"path1",0),
-		_talent(&"t2_ks","Divine Wrath",&"star",&"keystone",&"path2",0), _talent(&"t2_atk","Wrath of Thunder",&"bolt",&"passive",&"path2",0),
-		_talent(&"t2_jdg","Judgment Call",&"target",&"utility",&"path2",0), _talent(&"t2_rge","Righteous Fury",&"swords",&"passive",&"path2",0),
-		_talent(&"t2_hlth","Unyielding",&"shield",&"passive",&"path2",0), _talent(&"t2_sp","Storm Presence",&"wind",&"passive",&"path2",0),
-		_talent(&"t2_smte","Holy Smite",&"sparkle",&"passive",&"path2",0), _talent(&"t2_wrd","Sacred Ward",&"shield",&"passive",&"path2",0),
-		_talent(&"t2_mntr","Iron Guard",&"shield",&"passive",&"path2",0), _talent(&"t2_lgt","Lightning Reflexes",&"bolt",&"utility",&"path2",0),
-		_talent(&"t2_flk","Battle Momentum",&"wind",&"utility",&"path2",0), _talent(&"t2_spd","Rapid Advance",&"bolt",&"utility",&"path2",0),
-		_talent(&"s1_ks","Arcane Annihilation",&"skull",&"keystone",&"spec1",0), _talent(&"s1_am","Arcane Mastery",&"gem",&"passive",&"spec1",4),
-		_talent(&"s1_ms","Mana Surge",&"orb",&"passive",&"spec1",3), _talent(&"s1_cs","Crystal Skin",&"gem",&"passive",&"spec1",2),
-		_talent(&"s1_pl","Phase Lock",&"globe",&"utility",&"spec1",1), _talent(&"s1_es","Ethereal Step",&"shadow",&"utility",&"spec1",0),
-		_talent(&"s1_ae","Arcane Empowerment",&"sparkle",&"utility",&"spec1",0), _talent(&"s1_rw","Runic Ward",&"gem",&"passive",&"spec1",0),
-		_talent(&"s2_ks","Oblivion",&"shadow",&"keystone",&"spec2",0), _talent(&"s2_sr","Soul Harvest",&"skull",&"passive",&"spec2",0),
-		_talent(&"s2_rs","Rift Mastery",&"shadow",&"passive",&"spec2",0), _talent(&"s2_bp","Blood Ritual",&"orb",&"utility",&"spec2",0),
-		_talent(&"s2_nz","Null Field",&"gem",&"utility",&"spec2",0), _talent(&"s2_dk","Dark Knowledge",&"book",&"passive",&"spec2",0),
-		_talent(&"s2_vp","Void Presence",&"shadow",&"utility",&"spec2",0), _talent(&"s2_cs2","Cursed Strike",&"swords",&"passive",&"spec2",0),
+		_talent(&"t_apex","Verdant Covenant",&"leaf",&"keystone",&"path1",0), _talent(&"t_pow","Nature's Might",&"leaf",&"passive",&"path1",5),
+		_talent(&"t_vit","Living Vitality",&"heart",&"passive",&"path1",3), _talent(&"t_arc","Wellspring",&"drop",&"utility",&"path1",2),
+		_talent(&"t_bh","Barkskin",&"shield",&"passive",&"path1",2), _talent(&"t_swift","Adaptive Rhythm",&"wave",&"passive",&"path1",1),
+		_talent(&"t_crit","Thorn Precision",&"target",&"passive",&"path1",3), _talent(&"t_mind","Rooted Mind",&"orb",&"passive",&"path1",1),
+		_talent(&"t_cd","Verdant Flow",&"sparkle",&"utility",&"path1",2), _talent(&"t_dodge","Wildstep",&"wind",&"utility",&"path1",0),
+		_talent(&"t_res","Guardian Growth",&"shield",&"passive",&"path1",0), _talent(&"t_life","Companion Bond",&"paw",&"passive",&"path1",0),
+		_talent(&"s1_ks","Cycle of Renewal",&"star",&"keystone",&"spec1",0), _talent(&"s1_am","Oracle's Insight",&"gem",&"passive",&"spec1",4),
+		_talent(&"s1_ms","Flowing Grace",&"drop",&"passive",&"spec1",3), _talent(&"s1_cs","Crystal Aegis",&"shield",&"passive",&"spec1",2),
+		_talent(&"s1_pl","Prescient Calm",&"globe",&"utility",&"spec1",1), _talent(&"s1_es","Foreseen Step",&"wind",&"utility",&"spec1",0),
+		_talent(&"s1_ae","Guiding Current",&"sparkle",&"utility",&"spec1",0), _talent(&"s1_rw","Sanctuary Ward",&"gem",&"passive",&"spec1",0),
 	]
 
 
@@ -126,10 +107,14 @@ static func _talent(id: StringName, name: String, icon: StringName, type: String
 
 static func _talent_bonus(id: StringName) -> String:
 	return {
-		&"t_pow":"+4% ATK per rank", &"t_vit":"+5% Max HP per rank", &"t_arc":"+8% Max Mana per rank",
-		&"t_bh":"+3% Defense per rank", &"t_swift":"+2% Attack Speed per rank", &"t_crit":"+1% Crit Chance per rank",
-		&"s1_am":"+5% Magic DMG per rank", &"s1_ms":"+3% Skill DMG per rank", &"s1_cs":"+2% Block Chance per rank",
-		&"s1_pl":"Slow Duration +10% per rank", &"t_apex":"All damage +8%, but Max HP -10%",
+		&"t_pow":"+4% Attack per rank", &"t_vit":"+5% Max HP per rank", &"t_arc":"+8% Max MP per rank",
+		&"t_bh":"+3% Defense per rank", &"t_swift":"+2% Attack Speed per rank", &"t_crit":"+1% Critical Chance per rank",
+		&"t_mind":"+3% Healing Power per rank", &"t_cd":"+1.5% Cooldown Reduction per rank",
+		&"t_dodge":"+1% Evasion per rank", &"t_res":"+1% Block Chance per rank", &"t_life":"+3% Skill Power per rank",
+		&"s1_am":"+5% Skill Power per rank", &"s1_ms":"+3% Healing Power per rank", &"s1_cs":"+2% Block Chance per rank",
+		&"s1_pl":"+1% Cooldown Reduction per rank", &"s1_es":"+1% Evasion per rank", &"s1_ae":"+4% Max MP per rank",
+		&"s1_rw":"+3% Defense per rank", &"t_apex":"Healing and protection effects reinforce each other.",
+		&"s1_ks":"Major healing restores a portion of its resource cost.",
 	}.get(id, "Improves this constellation effect per rank.")
 
 
@@ -176,7 +161,7 @@ static func inventory() -> Array[Dictionary]:
 		{
 			"id": &"trailguard", "name": "Trailguard Armor", "slot": &"armor",
 			"lv": 3, "rarity": &"rare", "icon": &"shield",
-			"stats": [["Health", "+22"], ["Defense", "+2"]],
+			"stats": [["Max HP", "+22"], ["Defense", "+2"]], "modifiers": {&"max_hp":22.0, &"defense":2.0},
 			"enhance": "+0/12", "success": "100%",
 			"locked": [["+3", "4 Common or Rare"], ["+6", "3 Rare"], ["+9", "2 Epic"], ["+12", "1 Legendary"]],
 			"actions": ["Enhance +1", "Arcane Dust ×1", "Refine"],
@@ -185,7 +170,7 @@ static func inventory() -> Array[Dictionary]:
 		{
 			"id": &"sunstep", "name": "Sunstep Shoes", "slot": &"shoes",
 			"lv": 2, "rarity": &"uncommon", "icon": &"boot",
-			"stats": [["Speed", "+8"], ["Agility", "+4"]],
+			"stats": [["Move Speed", "+8%"]], "modifiers": {&"move_speed":8.0},
 			"enhance": "+0/10", "success": "100%",
 			"locked": [["+3", "3 Common"], ["+6", "2 Uncommon"], ["+9", "1 Rare"]],
 			"actions": ["Enhance +1", "Solar Dust ×1", "Refine"],
@@ -194,7 +179,7 @@ static func inventory() -> Array[Dictionary]:
 		{
 			"id": &"ember_signet", "name": "Ember Signet", "slot": &"ring",
 			"lv": 1, "rarity": &"rare", "icon": &"ring",
-			"stats": [["Power", "+15"], ["Crit Chance", "+3%"]],
+			"stats": [["Power", "+15"], ["Critical Chance", "+3%"]], "modifiers": {&"power":15.0, &"critical_chance":3.0},
 			"enhance": "+0/12", "success": "100%",
 			"locked": [["+3", "4 Common or Rare"], ["+6", "3 Rare"], ["+9", "2 Epic"], ["+12", "1 Legendary"]],
 			"actions": ["Enhance +1", "Arcane Dust ×1", "Refine"],
@@ -203,18 +188,23 @@ static func inventory() -> Array[Dictionary]:
 		{
 			"id": &"bulwark_band", "name": "Bulwark Band", "slot": &"accessory",
 			"lv": 1, "rarity": &"common", "icon": &"band",
-			"stats": [["Defense", "+5"], ["HP", "+10"]],
+			"stats": [["Defense", "+5"], ["Max HP", "+10"]], "modifiers": {&"defense":5.0, &"max_hp":10.0},
 			"enhance": "+0/8", "success": "100%",
 			"locked": [["+3", "3 Common"], ["+6", "2 Uncommon"]],
 			"actions": ["Enhance +1", "Stone Dust ×1", "Refine"],
 			"desc": "A simple band that offers a modest protective barrier.",
 		},
+		{
+			"id": &"oracle_signet", "name": "Oracle Signet", "slot": &"ring",
+			"lv": 4, "rarity": &"epic", "icon": &"ring",
+			"stats": [["Skill Power", "+12"], ["Healing Power", "+6%"]], "modifiers": {&"skill_power":12.0, &"healing_power":6.0},
+			"enhance": "+0/12", "success": "100%",
+			"locked": [["+3", "4 Rare"], ["+6", "3 Epic"]],
+			"actions": [],
+			"desc": "A lucid crystal signet aligned with Oracle foresight and restorative flow.",
+		},
 	]
 
 
-## Item equipped in the given gear slot, or an empty Dictionary.
-static func equipped_in(slot_id: StringName) -> Dictionary:
-	for item in inventory():
-		if item["slot"] == slot_id:
-			return item
-	return {}
+static func initial_equipment() -> Dictionary:
+	return {&"armor":&"trailguard", &"shoes":&"sunstep", &"ring":&"ember_signet", &"accessory":&"bulwark_band"}

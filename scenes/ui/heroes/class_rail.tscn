@@ -1,7 +1,0 @@
-[gd_scene load_steps=2 format=3]
-
-[ext_resource type="Script" path="res://scripts/ui/heroes/class_rail.gd" id="1"]
-
-[node name="ClassRail" type="Control"]
-custom_minimum_size = Vector2(90, 0)
-script = ExtResource("1")

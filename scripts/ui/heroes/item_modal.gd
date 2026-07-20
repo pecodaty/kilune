@@ -5,7 +5,7 @@ extends Control
 ## Reference: App.tsx `ItemModal`.
 
 signal closed
-signal action_pressed(action: String)
+signal action_pressed(action: StringName, item_id: StringName)
 
 ## Item/talent glyph drawn in the accent color.
 class IconGlyph extends Control:
@@ -103,7 +103,7 @@ func _ready() -> void:
 func show_payload(payload: Dictionary) -> void:
 	if not is_node_ready():
 		await ready
-	_rebuild(StringName(payload["type"]), payload["data"])
+	_rebuild(StringName(payload["type"]), payload["data"], StringName(payload.get("action", &"")))
 	visible = true
 
 
@@ -112,7 +112,7 @@ func close() -> void:
 	closed.emit()
 
 
-func _rebuild(type: StringName, data: Dictionary) -> void:
+func _rebuild(type: StringName, data: Dictionary, action: StringName) -> void:
 	for child in _stack.get_children():
 		child.queue_free()
 	var accent: Color = HeroData.rarity_color(data["rarity"]) if type == &"item" else data["color"]
@@ -123,7 +123,7 @@ func _rebuild(type: StringName, data: Dictionary) -> void:
 	_stack.add_child(_divider(accent))
 	_stack.add_child(_paragraph(data["desc"]))
 	if type == &"item":
-		_build_item_rows(data, accent)
+		_build_item_rows(data, accent, action)
 	else:
 		_build_talent_rows(data, accent)
 
@@ -155,7 +155,7 @@ func _build_title_row(type: StringName, data: Dictionary, accent: Color) -> void
 	row.add_child(close_btn)
 
 
-func _build_item_rows(item: Dictionary, accent: Color) -> void:
+func _build_item_rows(item: Dictionary, accent: Color, action: StringName) -> void:
 	_stack.add_child(_stat_row("Standard", String(item["rarity"]).capitalize(), accent))
 	_stack.add_child(_stat_row("Enhancement", item["enhance"], Color("#E8D8FF")))
 	_stack.add_child(_stat_row("Success Chance", item["success"], UIPalette.HP))
@@ -172,7 +172,8 @@ func _build_item_rows(item: Dictionary, accent: Color) -> void:
 		for tier in item["locked"]:
 			_stack.add_child(_stat_row("Locked %s" % tier[0], tier[1], UIPalette.TEXT_MUTED, true))
 	_stack.add_child(_divider(accent))
-	_build_actions(item["actions"], accent)
+	if not action.is_empty():
+		_build_actions([action], accent, item["id"])
 
 
 func _build_talent_rows(talent: Dictionary, accent: Color) -> void:
@@ -180,26 +181,34 @@ func _build_talent_rows(talent: Dictionary, accent: Color) -> void:
 	var effect := String(talent["desc"]).trim_prefix("Increases ")
 	_stack.add_child(_stat_row("Effect", effect, UIPalette.CYAN))
 	_stack.add_child(_divider(accent))
-	_build_actions(["UPGRADE POINT", "MAX"], accent)
+	_build_actions([], accent, &"")
 
 
-func _build_actions(actions: Array, accent: Color) -> void:
+func _build_actions(actions: Array, accent: Color, item_id: StringName) -> void:
+	if actions.is_empty():
+		return
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_stack.add_child(row)
 	for i in range(actions.size()):
+		var action := StringName(actions[i])
 		var btn := ArcaneButton.new()
-		btn.text = actions[i]
+		btn.text = String(action).to_upper()
 		btn.fill_top = Color("#0A1535") if i == 0 else Color("#0A0720")
 		btn.fill_bottom = Color("#0D1A40") if i == 0 else Color("#080618")
 		btn.border_color = Color(accent, 0.55 if i == 0 else 0.3)
 		btn.add_theme_font_override("font", UIFonts.rajdhani_bold())
 		btn.add_theme_font_size_override("font_size", 9)
 		btn.add_theme_color_override("font_color", accent if i == 0 else UIPalette.TEXT_CHAT)
-		btn.pressed.connect(func() -> void: action_pressed.emit(actions[i]))
+		btn.pressed.connect(_emit_action.bind(action, item_id))
 		row.add_child(btn)
 		btn.custom_minimum_size.y = 30.0
+
+
+func _emit_action(action: StringName, item_id: StringName) -> void:
+	action_pressed.emit(action, item_id)
+	close()
 
 
 func _stat_row(label_text: String, value_text: String, value_color: Color, muted := false) -> HBoxContainer:

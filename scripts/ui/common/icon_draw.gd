@@ -253,7 +253,7 @@ static func sub_paw(ci: CanvasItem, rect: Rect2, color: Color) -> void:
 
 static func draw_sub_icon(ci: CanvasItem, tab_id: StringName, rect: Rect2, color: Color) -> void:
 	match tab_id:
-		&"class":
+		&"stats":
 			nav_heroes(ci, rect, color)
 		&"skills":
 			sub_zap(ci, rect, color)

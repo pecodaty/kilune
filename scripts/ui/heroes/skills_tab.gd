@@ -11,6 +11,7 @@ const SECTION_ORDER: Array[StringName] = [&"path1", &"path2", &"spec1", &"spec2"
 class PointsHeader extends Control:
 	var spent := 0
 	var remaining := 0
+	var budget := 0
 
 	func _ready() -> void:
 		custom_minimum_size.y = 48.0
@@ -18,12 +19,12 @@ class PointsHeader extends Control:
 
 	func _draw() -> void:
 		draw_string(UIFonts.cinzel_bold(), Vector2(12, 17), "SKILL POINTS", HORIZONTAL_ALIGNMENT_LEFT, -1, 9, UIPalette.GOLD_MUTED)
-		draw_string(UIFonts.rajdhani_bold(), Vector2(size.x - 170, 17), "%d remaining · %d/%d" % [remaining, spent, HeroData.SKILL_POINTS_TOTAL], HORIZONTAL_ALIGNMENT_RIGHT, 158, 9, UIPalette.CYAN if remaining > 0 else Color("#FF7733"))
+		draw_string(UIFonts.rajdhani_bold(), Vector2(size.x - 170, 17), "%d remaining · %d/%d" % [remaining, spent, budget], HORIZONTAL_ALIGNMENT_RIGHT, 158, 9, UIPalette.CYAN if remaining > 0 else Color("#FF7733"))
 		var track := Rect2(12, 24, size.x - 24, 4)
 		draw_rect(track, Color("#120930")); draw_rect(track, Color(UIPalette.PURPLE_STRUCTURE, 0.27), false, 1.0)
-		draw_rect(Rect2(track.position, Vector2(track.size.x * clampf(float(spent) / HeroData.SKILL_POINTS_TOTAL, 0, 1), track.size.y)), Color(UIPalette.CYAN, 0.85))
-		draw_string(UIFonts.rajdhani_semibold(), Vector2(12, 41), "6 Equipped · 16 Available · 15 SP per skill", HORIZONTAL_ALIGNMENT_LEFT, -1, 7, Color("#3A2858"))
-		draw_string(UIFonts.rajdhani_semibold(), Vector2(size.x - 110, 41), "Max 99 at Lv.99", HORIZONTAL_ALIGNMENT_RIGHT, 98, 7, Color("#3A2858"))
+		draw_rect(Rect2(track.position, Vector2(track.size.x * clampf(float(spent) / maxf(1.0, budget), 0, 1), track.size.y)), Color(UIPalette.CYAN, 0.85))
+		draw_string(UIFonts.rajdhani_semibold(), Vector2(12, 41), "6 Slots · 8 Available · 16 eventual maximum", HORIZONTAL_ALIGNMENT_LEFT, -1, 7, Color("#3A2858"))
+		draw_string(UIFonts.rajdhani_semibold(), Vector2(size.x - 110, 41), "Max %d at Lv.%d" % [TraitRules.MAX_SKILL_POINTS, TraitRules.MAX_CHARACTER_LEVEL], HORIZONTAL_ALIGNMENT_RIGHT, 98, 7, Color("#3A2858"))
 
 
 class LoadoutSlot extends Control:
@@ -136,6 +137,8 @@ class SkillSection extends VBoxContainer:
 	var skills: Array[Dictionary]
 	var equipped: Array[StringName]
 	var remaining := 0
+	var spent := 0
+	var character_level := 1
 	signal equip_requested(skill_id: StringName)
 	signal level_requested(skill_id: StringName)
 	signal mastery_requested(skill_id: StringName)
@@ -143,25 +146,25 @@ class SkillSection extends VBoxContainer:
 	func _ready() -> void:
 		add_theme_constant_override("separation", 8); mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var header := Control.new(); header.custom_minimum_size.y = 32; header.mouse_filter = Control.MOUSE_FILTER_IGNORE; header.draw.connect(_draw_header.bind(header)); add_child(header)
-		var unlocked: bool = HeroData.PROGRESSION_LEVEL >= meta["unlock"]
+		var unlocked: bool = character_level >= meta["unlock"] and meta.get("chosen", false)
 		for skill in skills:
 			var row := SkillRow.new(); row.skill = skill; row.locked = not unlocked; row.equipped = equipped.has(skill["id"]); row.section_color = meta["color"]
-			var next_req := HeroData.skill_level_requirement(skill["level"] + 1)
-			row.can_level = unlocked and skill["level"] < 10 and remaining > 0 and next_req <= HeroData.PROGRESSION_LEVEL
-			row.can_mastery = unlocked and skill["level"] == 10 and skill["mastery"] < 5 and remaining > 0 and HeroData.PROGRESSION_LEVEL >= 90
+			row.can_level = unlocked and TraitRules.can_upgrade_skill(skill, spent, character_level)
+			row.can_mastery = unlocked and TraitRules.can_upgrade_mastery(skill, spent, character_level)
 			row.equip_requested.connect(func(id: StringName) -> void: equip_requested.emit(id)); row.level_requested.connect(func(id: StringName) -> void: level_requested.emit(id)); row.mastery_requested.connect(func(id: StringName) -> void: mastery_requested.emit(id)); add_child(row)
 
 	func _draw_header(header: Control) -> void:
-		var unlocked: bool = HeroData.PROGRESSION_LEVEL >= meta["unlock"]; var color: Color = meta["color"] if unlocked else Color("#3A2858")
+		var unlocked: bool = character_level >= meta["unlock"] and meta.get("chosen", false); var color: Color = meta["color"] if unlocked else Color("#3A2858")
 		header.draw_rect(Rect2(4, 0, header.size.x - 8, header.size.y), Color("#0D0825", 0.62)); header.draw_rect(Rect2(4, 0, header.size.x - 8, header.size.y), Color(UIPalette.PURPLE_STRUCTURE, 0.25), false, 1.0)
 		header.draw_rect(Rect2(12, 7, 3, 18), color)
 		header.draw_string(UIFonts.cinzel_bold(), Vector2(24, 21), meta["label"], HORIZONTAL_ALIGNMENT_LEFT, -1, 10, color)
-		var status := "Lv.%d ✓ · 4 Skills" % meta["unlock"] if unlocked else "LOCKED · Requires Lv.%d" % meta["unlock"]
+		var status := "SELECTED · 4 Skills" if unlocked else "UNCHOSEN · Requires Lv.%d" % meta["unlock"]
 		header.draw_string(UIFonts.rajdhani_bold(), Vector2(header.size.x - 150, 21), status, HORIZONTAL_ALIGNMENT_RIGHT, 138, 7, Color(color, 0.7))
 
 
 var _skills: Array[Dictionary] = []
 var _equipped: Array[StringName] = []
+var _state: HeroProgressionState
 var _content: VBoxContainer
 var _drag_active := false
 var _drag_started := false
@@ -174,10 +177,30 @@ func _ready() -> void:
 	size_flags_vertical = Control.SIZE_EXPAND_FILL; size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; scroll_deadzone = 4
 	get_v_scroll_bar().custom_minimum_size.x = 0; get_v_scroll_bar().mouse_filter = Control.MOUSE_FILTER_IGNORE
-	for skill in HeroData.active_skills(): _skills.append(skill.duplicate(true))
-	_equipped = HeroData.equipped_skills()
 	visibility_changed.connect(_on_visibility_changed)
 	call_deferred("_rebuild")
+
+
+func bind_state(state: HeroProgressionState) -> void:
+	if _state != null and _state.changed.is_connected(_on_state_changed):
+		_state.changed.disconnect(_on_state_changed)
+	_state = state
+	_state.changed.connect(_on_state_changed)
+	_refresh_snapshots()
+	call_deferred("_rebuild")
+
+
+func _on_state_changed(change_kind: StringName) -> void:
+	if change_kind == &"skills" or change_kind == &"loadout":
+		_refresh_snapshots()
+		_rebuild()
+
+
+func _refresh_snapshots() -> void:
+	if _state == null:
+		return
+	_skills = _state.skills_snapshot()
+	_equipped = _state.loadout_snapshot()
 
 
 func _on_visibility_changed() -> void:
@@ -185,14 +208,16 @@ func _on_visibility_changed() -> void:
 
 
 func _rebuild() -> void:
-	if not is_node_ready() or size.x <= 0: return
+	if not is_node_ready() or size.x <= 0 or _state == null: return
 	var scroll := scroll_vertical
 	if is_instance_valid(_content): remove_child(_content); _content.queue_free()
 	_content = VBoxContainer.new(); _content.custom_minimum_size.x = size.x; _content.add_theme_constant_override("separation", 8); _content.mouse_filter = Control.MOUSE_FILTER_IGNORE; add_child(_content)
-	var points := PointsHeader.new(); points.spent = _spent(); points.remaining = HeroData.SKILL_POINTS_TOTAL - points.spent; _content.add_child(points)
+	var level: int = _state.identity_snapshot()["level"]
+	var budget := TraitRules.points_for_level(level)
+	var points := PointsHeader.new(); points.spent = _spent(); points.budget = budget; points.remaining = budget - points.spent; _content.add_child(points)
 	var equipped_panel := EquippedPanel.new(); equipped_panel.slots = _equipped_data(); equipped_panel.unequip_requested.connect(_toggle_equip); _content.add_child(equipped_panel)
 	for section_id in SECTION_ORDER:
-		var section := SkillSection.new(); section.section_id = section_id; section.meta = HeroData.skill_sections()[section_id]; section.skills = _section_skills(section_id); section.equipped = _equipped; section.remaining = HeroData.SKILL_POINTS_TOTAL - _spent()
+		var section := SkillSection.new(); section.section_id = section_id; section.meta = HeroData.skill_sections()[section_id]; section.skills = _section_skills(section_id); section.equipped = _equipped; section.remaining = budget - _spent(); section.spent = _spent(); section.character_level = level
 		section.equip_requested.connect(_toggle_equip); section.level_requested.connect(_upgrade_level); section.mastery_requested.connect(_upgrade_mastery); _content.add_child(section)
 	_content.add_child(_spacer(8)); set_deferred("scroll_vertical", scroll)
 
@@ -225,28 +250,20 @@ func _spent() -> int:
 
 
 func _toggle_equip(skill_id: StringName) -> void:
-	var skill := _find_skill(skill_id)
-	if skill.is_empty() or skill["level"] <= 0: return
-	var index := _equipped.find(skill_id)
-	if index >= 0: _equipped[index] = &""
-	else:
-		index = _equipped.find(&"")
-		if index < 0: return
-		_equipped[index] = skill_id
-	loadout_changed.emit(_equipped.duplicate()); _rebuild()
+	if _state != null and _state.toggle_skill_loadout(skill_id):
+		loadout_changed.emit(_state.loadout_snapshot())
 
 
 func _upgrade_level(skill_id: StringName) -> void:
-	var skill := _find_skill(skill_id)
-	if skill.is_empty() or _spent() >= HeroData.SKILL_POINTS_TOTAL or skill["level"] >= 10: return
-	if HeroData.PROGRESSION_LEVEL < HeroData.skill_level_requirement(skill["level"] + 1): return
-	skill["level"] += 1; skill_upgraded.emit(skill_id, skill["level"], skill["mastery"]); _rebuild()
+	if _state != null and _state.upgrade_skill(skill_id):
+		var skill := _find_skill(skill_id)
+		skill_upgraded.emit(skill_id, skill["level"], skill["mastery"])
 
 
 func _upgrade_mastery(skill_id: StringName) -> void:
-	var skill := _find_skill(skill_id)
-	if skill.is_empty() or skill["level"] < 10 or skill["mastery"] >= 5 or _spent() >= HeroData.SKILL_POINTS_TOTAL or HeroData.PROGRESSION_LEVEL < 90: return
-	skill["mastery"] += 1; skill_upgraded.emit(skill_id, skill["level"], skill["mastery"]); _rebuild()
+	if _state != null and _state.upgrade_mastery(skill_id):
+		var skill := _find_skill(skill_id)
+		skill_upgraded.emit(skill_id, skill["level"], skill["mastery"])
 
 
 func _spacer(height: float) -> Control:

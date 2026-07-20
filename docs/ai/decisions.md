@@ -1,15 +1,13 @@
 # Decisions
 
-## Heroes sub-tab architecture
+## Heroes progression ownership
 
-HeroesTab is a vertical stack: HeroHeader (identity + Back), a clipped
-ContentWrapper holding one page per destination (Class rail/arch/panel plus
-one scrollable SubTabPage per Skills/Talents/Equipment/Cards/Pets), and the
-SubTabBar. The ItemModal overlay covers only the ContentWrapper so the header
-and sub-tab bar stay reachable. All reference-state hero data (cast order,
-talents, inventory, gear slots) lives in `scripts/ui/heroes/hero_data.gd`
-until hero/progression systems own it. Modal and section actions emit signals
-for future systems instead of mutating game state.
+HeroesTab is a vertical stack of HeroHeader, a clipped content wrapper, and a fixed six-item
+SubTabBar. Its default Stats page replaces the removed class browser. HeroesTab owns one
+session-local `HeroProgressionState`; Stats, Skills, Talents, Equipment, and HeroHeader receive it
+through `bind_state`. The state exposes defensive snapshots, validated mutations, and one change
+signal, making it save-system-ready without creating a global singleton. ItemModal actions carry
+the item ID back to Equipment for safe equip, replacement, and unequip mutations.
 
 ## Safe-area coordinates
 

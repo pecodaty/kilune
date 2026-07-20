@@ -22,7 +22,7 @@ signal quick_action_requested(action_id: StringName)
 @onready var _backpack_screen: BackpackScreen = $SafeAreaContainer/MainColumn/BackpackScreen
 @onready var _mailbox_screen: MailboxScreen = $SafeAreaContainer/MainColumn/MailboxScreen
 
-const HEROES_PLAQUE := "Heroes · Class Selection"
+const HEROES_PLAQUE := "Heroes · Character Stats"
 const BATTLE_MODES_PLAQUE := "Battle Modes"
 
 var _battle_plaque := ""
