@@ -357,6 +357,17 @@ static func item_sparkle(ci: CanvasItem, rect: Rect2, color: Color) -> void:
 	_stroke(ci, s, color, 1.1 * u)
 
 
+static func item_flower(ci: CanvasItem, rect: Rect2, color: Color) -> void:
+	var u := _u(rect)
+	var center := rect.get_center()
+	for i in range(6):
+		var angle := TAU * float(i) / 6.0
+		var petal_center := center + Vector2(cos(angle), sin(angle)) * 4.2 * u
+		ci.draw_circle(petal_center, 2.5 * u, Color(color, 0.18))
+		ci.draw_arc(petal_center, 2.5 * u, 0.0, TAU, 14, color, 0.9 * u, true)
+	ci.draw_circle(center, 2.2 * u, Color(color, 0.65))
+
+
 static func draw_item_icon(ci: CanvasItem, icon_id: StringName, rect: Rect2, color: Color) -> void:
 	match icon_id:
 		&"fire":
@@ -391,6 +402,12 @@ static func draw_item_icon(ci: CanvasItem, icon_id: StringName, rect: Rect2, col
 			item_target(ci, rect, color)
 		&"sparkle":
 			item_sparkle(ci, rect, color)
+		&"star":
+			auto_star_icon(ci, rect, color)
+		&"paw":
+			sub_paw(ci, rect, color)
+		&"flower":
+			item_flower(ci, rect, color)
 		&"gem":
 			var gem := UIDraw.diamond(rect.get_center(), rect.size.x * 0.38, rect.size.y * 0.45)
 			ci.draw_colored_polygon(gem, Color(color, 0.35))

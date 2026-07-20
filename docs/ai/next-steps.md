@@ -1,6 +1,6 @@
 # Next Steps — Playable Loop Implementation Plan
 
-Status: Planned  
+Status: In progress — Phase 1 complete
 Scope: First playable loop, excluding Stages and main progression
 
 ## Objective
@@ -27,6 +27,11 @@ Configure Fern → Enter Encounter → Fight → Win/Lose → Receive Rewards
 
 Goal: establish one authoritative source of gameplay data.
 
+Status: **Complete (2026-07-19).** The shared-shell scene owns `GameSession`, which owns a
+versioned `PlayerProfile`. Heroes, Backpack, Equipment, HUD, Shop currency displays, Dungeon
+attempts, and the combat skill dock are bound to the composed profile states. Typed catalogs and
+validated mutation results are in place; disk persistence remains Phase 4 work.
+
 | Work | Priority |
 | --- | ---: |
 | Add a scene-owned `GameSession` / `PlayerProfile` | 1 |
@@ -52,10 +57,10 @@ GameSession
 
 Exit criteria:
 
-- Heroes, Backpack, Equipment, HUD, and currency displays read the same data.
-- Equipping an item updates Backpack, Equipment, Stats, and future combat snapshots.
-- No UI screen owns authoritative gameplay values.
-- A profile can round-trip through a dictionary before disk persistence is enabled.
+- [x] Heroes, Backpack, Equipment, HUD, and currency displays read the same data.
+- [x] Equipping an item updates Backpack, Equipment, Stats, and combat snapshots.
+- [x] No UI screen owns authoritative Phase 1 gameplay values.
+- [x] A profile round-trips through a versioned dictionary before disk persistence is enabled.
 
 ## Phase 2 — Functional Combat
 

@@ -6,6 +6,7 @@ extends Control
 signal quick_action_requested(action_id: StringName)
 
 @onready var _safe_area: MarginContainer = $SafeAreaContainer
+@onready var _game_session: GameSession = $GameSession
 @onready var _top_hud: TopHud = $SafeAreaContainer/MainColumn/TopHud
 @onready var _stage_plaque: StagePlaque = $SafeAreaContainer/MainColumn/StagePlaque
 @onready var _heroes_tab: HeroesTab = $SafeAreaContainer/MainColumn/HeroesTab
@@ -29,6 +30,8 @@ var _battle_plaque := ""
 
 
 func _ready() -> void:
+	_bind_profile(_game_session.profile)
+	_game_session.profile_replaced.connect(_bind_profile)
 	_apply_safe_area()
 	get_viewport().size_changed.connect(_apply_safe_area)
 
@@ -44,6 +47,15 @@ func _ready() -> void:
 	_floating_menu.map_requested.connect(_on_map_open_requested)
 	_floating_menu.config_requested.connect(func() -> void: quick_action_requested.emit(&"config"))
 	queue_redraw()
+
+
+func _bind_profile(profile: PlayerProfile) -> void:
+	_top_hud.bind_profile(profile)
+	_skill_dock.bind_profile(profile)
+	_heroes_tab.bind_profile(profile)
+	_backpack_screen.bind_inventory_state(profile.inventory)
+	_shop_screen.bind_wallet_state(profile.wallet)
+	_dungeon_flow.bind_profile(profile)
 
 
 func _draw() -> void:

@@ -250,18 +250,18 @@ func _spent() -> int:
 
 
 func _toggle_equip(skill_id: StringName) -> void:
-	if _state != null and _state.toggle_skill_loadout(skill_id):
+	if _state != null and _state.toggle_skill_loadout(skill_id).ok:
 		loadout_changed.emit(_state.loadout_snapshot())
 
 
 func _upgrade_level(skill_id: StringName) -> void:
-	if _state != null and _state.upgrade_skill(skill_id):
+	if _state != null and _state.upgrade_skill(skill_id).ok:
 		var skill := _find_skill(skill_id)
 		skill_upgraded.emit(skill_id, skill["level"], skill["mastery"])
 
 
 func _upgrade_mastery(skill_id: StringName) -> void:
-	if _state != null and _state.upgrade_mastery(skill_id):
+	if _state != null and _state.upgrade_mastery(skill_id).ok:
 		var skill := _find_skill(skill_id)
 		skill_upgraded.emit(skill_id, skill["level"], skill["mastery"])
 

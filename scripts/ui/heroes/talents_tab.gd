@@ -227,14 +227,14 @@ func _select_node(talent_id: StringName) -> void:
 func _increase_rank(talent_id: StringName) -> void:
 	var talent := _find_talent(talent_id)
 	if talent.is_empty() or _state == null: return
-	if _state.set_talent_rank(talent_id, int(talent["rank"]) + 1):
+	if _state.set_talent_rank(talent_id, int(talent["rank"]) + 1).ok:
 		talent_rank_changed.emit(talent_id, int(talent["rank"]) + 1)
 
 
 func _decrease_rank(talent_id: StringName) -> void:
 	var talent := _find_talent(talent_id)
 	if talent.is_empty() or _state == null: return
-	if _state.set_talent_rank(talent_id, int(talent["rank"]) - 1):
+	if _state.set_talent_rank(talent_id, int(talent["rank"]) - 1).ok:
 		talent_rank_changed.emit(talent_id, int(talent["rank"]) - 1)
 
 

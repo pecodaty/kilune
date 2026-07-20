@@ -3,31 +3,6 @@ extends Control
 ## Shared-shell inventory destination opened by the floating quick menu.
 
 const FILTERS := [[&"all","ALL"],[&"materials","MATERIALS"],[&"equipment","EQUIPMENT"],[&"blueprints","BLUEPRINTS"],[&"consumables","CONSUMABLES"],[&"quest","QUEST"],[&"misc","MISC"]]
-const ITEMS := [
-	[&"thread_ancient","Ancient Thread",&"materials",5,&"common",&"ticket",false,0],
-	[&"arcane_dust","Arcane Dust",&"materials",909,&"uncommon",&"star",false,0],
-	[&"beast_leather","Beast Leather",&"materials",8,&"common",&"leaf",false,0],
-	[&"celestial_dust","Celestial Dust",&"materials",99,&"rare",&"star",false,0],
-	[&"hardwood","Hardwood",&"materials",12,&"common",&"box",false,0],
-	[&"iron_ore","Iron Ore",&"materials",20,&"common",&"key",false,0],
-	[&"moonsteel","Moonsteel",&"materials",99,&"rare",&"gem",false,0],
-	[&"royal_leather","Royal Leather",&"materials",4,&"uncommon",&"dress",false,0],
-	[&"spirit_gem","Spirit Gem",&"materials",3,&"epic",&"gem",false,0],
-	[&"star_crystal","Star Crystal",&"materials",2,&"legendary",&"star",false,0],
-	[&"thread","Thread",&"materials",12,&"common",&"ticket",false,0],
-	[&"bulwark_band","Bulwark Band",&"equipment",1,&"rare",&"gem",true,1],
-	[&"ember_signet","Ember Signet",&"equipment",1,&"epic",&"gem",true,1],
-	[&"sunstep_shoes","Sunstep Shoes",&"equipment",1,&"uncommon",&"bolt",false,2],
-	[&"trailguard","Trailguard Armor",&"equipment",1,&"rare",&"dress",true,3],
-	[&"ember_bp","Ember Signet BP",&"blueprints",1,&"uncommon",&"ticket",false,0],
-	[&"moonveil_bp","Moonveil Cap BP",&"blueprints",1,&"uncommon",&"ticket",false,0],
-	[&"oracle_bp","Oracle Necklace BP",&"blueprints",1,&"rare",&"ticket",false,0],
-	[&"cleaver_bp","Vanguard Cleaver BP",&"blueprints",1,&"epic",&"ticket",false,0],
-	[&"health_potion","Health Potion",&"consumables",14,&"common",&"lamp",false,0],
-	[&"mana_crystal","Mana Crystal",&"consumables",6,&"uncommon",&"gem",false,0],
-	[&"lost_seal","Lost Seal",&"quest",1,&"rare",&"key",false,0],
-	[&"valor_token","Token of Valor",&"misc",3,&"uncommon",&"star",false,0],
-]
 
 var _filter: StringName = &"all"
 var _sort: StringName = &"type"
@@ -39,10 +14,23 @@ var _filter_dragging := false
 var _filter_pointer := -1
 var _filter_press_start := Vector2.ZERO
 var _filter_scroll_start := 0
+var _inventory_state: InventoryState
 
 
 func _ready() -> void:
 	clip_contents=true; resized.connect(_rebuild); _rebuild()
+
+
+func bind_inventory_state(inventory_state: InventoryState) -> void:
+	if _inventory_state != null and _inventory_state.changed.is_connected(_on_inventory_changed):
+		_inventory_state.changed.disconnect(_on_inventory_changed)
+	_inventory_state = inventory_state
+	_inventory_state.changed.connect(_on_inventory_changed)
+	_rebuild()
+
+
+func _on_inventory_changed(_change_kind: StringName) -> void:
+	_rebuild()
 
 
 func open() -> void:
@@ -58,7 +46,9 @@ func _rebuild() -> void:
 
 func _build_header() -> void:
 	_add_label(self,"BACKPACK",true,16,UIPalette.CYAN,Vector2(16,14),Vector2(180,30))
-	_add_label(self,"Capacity %d/100" % ITEMS.size(),false,9,Color("#5A4080"),Vector2(size.x-166,18),Vector2(150,22),HORIZONTAL_ALIGNMENT_RIGHT)
+	var used := _inventory_state.used_slots() if _inventory_state != null else 0
+	var maximum := _inventory_state.capacity() if _inventory_state != null else InventoryState.CAPACITY
+	_add_label(self,"Capacity %d/%d" % [used, maximum],false,9,Color("#5A4080"),Vector2(size.x-166,18),Vector2(150,22),HORIZONTAL_ALIGNMENT_RIGHT)
 
 
 func _build_filters() -> void:
@@ -133,25 +123,26 @@ func _build_grid() -> void:
 	var scroll:=ScrollContainer.new();scroll.position=Vector2(0,154);scroll.size=Vector2(size.x,size.y-154);scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;add_child(scroll)
 	var items:=_items();var card_w:=(size.x-34.0)/3.0;var rows:=ceili(items.size()/3.0);var canvas:=Control.new();canvas.custom_minimum_size=Vector2(size.x-12,rows*108+12);scroll.add_child(canvas)
 	for i in range(items.size()):
-		var item:Array=items[i];var border:=_rarity_border(item[4]);var card:=_button("",Color.WHITE,border);card.position=Vector2(8+(i%3)*(card_w+5),8+(i/3)*108);card.size=Vector2(card_w,100);card.fill_top=_rarity_fill(item[4]);card.fill_bottom=Color(_rarity_fill(item[4]),0.72);canvas.add_child(card)
-		var icon:=ShopIcon.new();icon.icon_id=item[5];icon.accent=border;icon.framed=true;icon.position=Vector2((card_w-42)*0.5,10);icon.size=Vector2(42,42);card.add_child(icon)
-		if item[3]>1:_add_label(card,"×%d"%item[3],false,7,border,Vector2(card_w-32,42),Vector2(28,14),HORIZONTAL_ALIGNMENT_RIGHT)
-		_add_label(card,item[1],false,8,Color("#C8B8E8"),Vector2(3,55),Vector2(card_w-6,24),HORIZONTAL_ALIGNMENT_CENTER)
-		if item[6]:
+		var item:Dictionary=items[i];var border:=_rarity_border(item["rarity"]);var card:=_button("",Color.WHITE,border);card.position=Vector2(8+(i%3)*(card_w+5),8+(i/3)*108);card.size=Vector2(card_w,100);card.fill_top=_rarity_fill(item["rarity"]);card.fill_bottom=Color(_rarity_fill(item["rarity"]),0.72);canvas.add_child(card)
+		var icon:=ShopIcon.new();icon.icon_id=item["icon"];icon.accent=border;icon.framed=true;icon.position=Vector2((card_w-42)*0.5,10);icon.size=Vector2(42,42);card.add_child(icon)
+		if item["quantity"]>1:_add_label(card,"×%d"%item["quantity"],false,7,border,Vector2(card_w-32,42),Vector2(28,14),HORIZONTAL_ALIGNMENT_RIGHT)
+		_add_label(card,item["name"],false,8,Color("#C8B8E8"),Vector2(3,55),Vector2(card_w-6,24),HORIZONTAL_ALIGNMENT_CENTER)
+		if item["equipped"]:
 			_add_label(card,"EQ",false,6,UIPalette.CYAN,Vector2(card_w-24,3),Vector2(20,13),HORIZONTAL_ALIGNMENT_CENTER)
-			_add_label(card,"Lv.%d · Equipped"%item[7],false,7,UIPalette.CYAN,Vector2(2,80),Vector2(card_w-4,16),HORIZONTAL_ALIGNMENT_CENTER)
-		elif item[2]==&"equipment":_add_label(card,"Lv.%d"%item[7],false,7,Color("#5A4080"),Vector2(2,80),Vector2(card_w-4,16),HORIZONTAL_ALIGNMENT_CENTER)
+			_add_label(card,"Lv.%d · Equipped"%item["level"],false,7,UIPalette.CYAN,Vector2(2,80),Vector2(card_w-4,16),HORIZONTAL_ALIGNMENT_CENTER)
+		elif item["category"]==&"equipment":_add_label(card,"Lv.%d"%item["level"],false,7,Color("#5A4080"),Vector2(2,80),Vector2(card_w-4,16),HORIZONTAL_ALIGNMENT_CENTER)
 
 
-func _items() -> Array:
-	var out:Array=[]
-	for item in ITEMS:
-		if _filter==&"all" or item[2]==_filter:out.append(item)
+func _items() -> Array[Dictionary]:
+	var out:Array[Dictionary]=[]
+	if _inventory_state == null:return out
+	for item in _inventory_state.items_snapshot():
+		if _filter==&"all" or item["category"]==_filter:out.append(item)
 	var order:={&"legendary":0,&"epic":1,&"rare":2,&"uncommon":3,&"common":4}
-	out.sort_custom(func(a:Array,b:Array)->bool:
-		if _sort==&"name":return String(a[1])<String(b[1])
-		if _sort==&"rarity":return order[a[4]]<order[b[4]]
-		return String(a[2])<String(b[2]))
+	out.sort_custom(func(a:Dictionary,b:Dictionary)->bool:
+		if _sort==&"name":return String(a["name"])<String(b["name"])
+		if _sort==&"rarity":return order[a["rarity"]]<order[b["rarity"]]
+		return String(a["category"])<String(b["category"]))
 	return out
 
 

@@ -80,7 +80,7 @@ func _draw() -> void:
 	if icon_texture != null:
 		draw_texture_rect(icon_texture, icon_rect, false)
 	elif rune_id != &"":
-		IconDraw.draw_rune(self, rune_id, icon_rect)
+		IconDraw.draw_item_icon(self, rune_id, icon_rect, UIPalette.CYAN)
 
 	# Cooldown wipe (radial, dark) — Godot-driven, never baked into art.
 	if cooldown_fraction > 0.0:

@@ -7,38 +7,13 @@ signal closed
 const COMBAT_VIEW_SCENE := preload("res://scenes/ui/gameplay/combat_view.tscn")
 const SKILL_DOCK_SCENE := preload("res://scenes/ui/gameplay/skill_dock.tscn")
 
-const DUNGEONS: Array[Dictionary] = [
-	{
-		"id": &"golden", "name": "Golden Dungeon", "icon": &"key",
-		"description": "Raid the Sunken Vault and claim Gold.", "reward": "Gold",
-		"reward_description": "Gold ×100", "attempts": 3, "power": 100,
-		"enemy": "Gilded Scout", "enemy_icon": &"crown", "color": Color("#FFD700"),
-	},
-	{
-		"id": &"cards", "name": "Card Materials Dungeon", "icon": &"gem",
-		"description": "Recover enhancement and refinement reagents.",
-		"reward": "Enhancement & Refinement", "reward_description": "Enhancement ×5",
-		"attempts": 3, "power": 150, "enemy": "Crystal Guardian",
-		"enemy_icon": &"gem", "color": Color("#448AFF"),
-	},
-	{
-		"id": &"talent", "name": "Talent Dungeon", "icon": &"star",
-		"description": "Complete an ancient mastery trial.", "reward": "Talent Materials",
-		"reward_description": "Talent Shard ×3", "attempts": 3, "power": 200,
-		"enemy": "Trial Warden", "enemy_icon": &"star", "color": Color("#AA44FF"),
-	},
-	{
-		"id": &"pet", "name": "Pet Growth Dungeon", "icon": &"paw",
-		"description": "Gather Pet Essence in a companion sanctuary.", "reward": "Pet Essence",
-		"reward_description": "Pet Essence ×10", "attempts": 3, "power": 120,
-		"enemy": "Spirit Familiar", "enemy_icon": &"paw", "color": Color("#22DD6E"),
-	},
-]
-
 enum View { LIST, LEVEL, COMBAT }
 
 var _view := View.LIST
-var _selected: Dictionary = DUNGEONS[0]
+var _dungeons: Array[Dictionary] = []
+var _selected: Dictionary = {}
+var _activity_state: ActivityState
+var _profile: PlayerProfile
 var _level := 1
 var _phase := 1
 var _enemy_hp := 100
@@ -52,8 +27,33 @@ var _modal: Control
 
 func _ready() -> void:
 	clip_contents = true
+	_dungeons = GameCatalog.dungeon_snapshots()
+	_selected = _dungeons[0]
 	resized.connect(_rebuild)
 	_show_list()
+
+
+func bind_activity_state(activity_state: ActivityState) -> void:
+	if _activity_state != null and _activity_state.changed.is_connected(_on_activity_changed):
+		_activity_state.changed.disconnect(_on_activity_changed)
+	_activity_state = activity_state
+	_activity_state.changed.connect(_on_activity_changed)
+	if is_node_ready() and visible:
+		_rebuild()
+
+
+func bind_profile(profile: PlayerProfile) -> void:
+	_profile = profile
+	bind_activity_state(profile.activity)
+
+
+func _on_activity_changed(_change_kind: StringName) -> void:
+	if visible and _view != View.COMBAT:
+		_rebuild()
+
+
+func _attempts(activity_id: StringName) -> int:
+	return _activity_state.attempts(activity_id) if _activity_state != null else ActivityState.DEFAULT_ATTEMPTS
 
 
 func open() -> void:
@@ -127,8 +127,8 @@ func _show_list() -> void:
 	var card_w := size.x - card_x * 2.0
 	var card_h := minf(116.0, (size.y - 152.0) / 4.25)
 	var gap := 8.0
-	for i in range(DUNGEONS.size()):
-		_add_dungeon_card(DUNGEONS[i], Vector2(card_x, 108.0 + i * (card_h + gap)), Vector2(card_w, card_h))
+	for i in range(_dungeons.size()):
+		_add_dungeon_card(_dungeons[i], Vector2(card_x, 108.0 + i * (card_h + gap)), Vector2(card_w, card_h))
 
 
 func _add_dungeon_card(data: Dictionary, at: Vector2, card_size: Vector2) -> void:
@@ -169,7 +169,7 @@ func _add_dungeon_card(data: Dictionary, at: Vector2, card_size: Vector2) -> voi
 	reward.position = Vector2(14, card_size.y - 61)
 	reward.size = Vector2(card_size.x * 0.68, 18)
 	card.add_child(reward)
-	var attempts := _label("Attempts: %d/3" % data["attempts"], false, 9, Color("#5A4888"), HORIZONTAL_ALIGNMENT_RIGHT)
+	var attempts := _label("Attempts: %d/3" % _attempts(data["id"]), false, 9, Color("#5A4888"), HORIZONTAL_ALIGNMENT_RIGHT)
 	attempts.position = Vector2(card_size.x - 115, card_size.y - 61)
 	attempts.size = Vector2(100, 18)
 	card.add_child(attempts)
@@ -236,7 +236,7 @@ func _show_level_pick() -> void:
 	info.size = Vector2(size.x - 64, 104)
 	add_child(info)
 	var rows := [
-		["Attempts Remaining", "%d / 3" % _selected["attempts"]],
+		["Attempts Remaining", "%d / 3" % _attempts(_selected["id"])],
 		["Recommended Power", str(int(_selected["power"]) * _level)],
 		["Rewards", _selected["reward_description"]],
 	]
@@ -296,13 +296,8 @@ func _show_combat() -> void:
 	add_child(leave)
 
 	var dock: SkillDock = SKILL_DOCK_SCENE.instantiate()
-	dock.skills = [
-		{"rune": &"fire", "locked": false, "level_required": 0},
-		{"rune": &"ice", "locked": false, "level_required": 0},
-		{"rune": &"wind", "locked": false, "level_required": 0},
-		{"rune": &"", "locked": true, "level_required": 40},
-		{"rune": &"", "locked": true, "level_required": 55},
-	]
+	if _profile != null:
+		dock.bind_profile(_profile)
 	dock.position = Vector2(0, size.y - 64)
 	dock.size = Vector2(size.x, 64)
 	dock.skill_pressed.connect(func(_slot: int) -> void: combat.play_attack())

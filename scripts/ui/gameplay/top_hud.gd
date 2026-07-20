@@ -45,6 +45,7 @@ var _timer_label: Label
 var _hp_bar: StatBar
 var _mp_bar: StatBar
 var _timer: Timer
+var _profile: PlayerProfile
 
 
 func _ready() -> void:
@@ -118,6 +119,36 @@ func _ready() -> void:
 	_refresh_text()
 	_refresh_stats()
 	_refresh_timer()
+
+
+func bind_profile(profile: PlayerProfile) -> void:
+	if _profile != null and _profile.changed.is_connected(_on_profile_changed):
+		_profile.changed.disconnect(_on_profile_changed)
+	_profile = profile
+	_profile.changed.connect(_on_profile_changed)
+	_refresh_profile()
+
+
+func _on_profile_changed(domain: StringName, _change_kind: StringName) -> void:
+	if domain == &"hero" or domain == &"inventory":
+		_refresh_profile()
+
+
+func _refresh_profile() -> void:
+	if _profile == null:
+		return
+	var identity := _profile.hero.identity_snapshot()
+	var max_hp := 1.0
+	var max_mp := 1.0
+	for stat in _profile.hero.stats_snapshot():
+		if stat["id"] == &"max_hp": max_hp = stat["final"]
+		elif stat["id"] == &"max_mp": max_mp = stat["final"]
+	hero_name = identity["name"]
+	level = identity["level"]
+	hp_max = max_hp
+	mp_max = max_mp
+	hp = max_hp
+	mp = max_mp
 
 
 func _make_portrait_texture() -> AtlasTexture:

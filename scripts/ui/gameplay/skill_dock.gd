@@ -8,18 +8,19 @@ signal auto_toggled(active: bool)
 const AUTO_BUTTON_SCENE := preload("res://scenes/ui/gameplay/auto_button.tscn")
 const SKILL_SLOT_SCENE := preload("res://scenes/ui/gameplay/skill_slot.tscn")
 
-## Skill definitions: [{rune: StringName, locked: bool, level_required: int}]
+## Presentation fallback used before a PlayerProfile is bound.
 @export var skills: Array = [
-	{"rune": &"fire", "locked": false, "level_required": 0},
-	{"rune": &"ice", "locked": false, "level_required": 0},
-	{"rune": &"wind", "locked": false, "level_required": 0},
-	{"rune": &"shadow", "locked": true, "level_required": 40},
-	{"rune": &"", "locked": true, "level_required": 55},
-	{"rune": &"", "locked": true, "level_required": 70},
+	{"rune": &"leaf", "locked": false, "level_required": 0},
+	{"rune": &"globe", "locked": false, "level_required": 0},
+	{"rune": &"wave", "locked": false, "level_required": 0},
+	{"rune": &"drop", "locked": false, "level_required": 0},
+	{"rune": &"orb", "locked": false, "level_required": 0},
+	{"rune": &"", "locked": false, "level_required": 0},
 ]
 
 var _auto_button: AutoButton
 var _slots: Array[SkillSlot] = []
+var _profile: PlayerProfile
 
 
 func _ready() -> void:
@@ -32,7 +33,7 @@ func _ready() -> void:
 	row.offset_top = 7.0
 	row.offset_right = -8.0
 	row.offset_bottom = -7.0
-	row.add_theme_constant_override("separation", 6)
+	row.add_theme_constant_override("separation", 3)
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(row)
@@ -62,6 +63,31 @@ func _ready() -> void:
 		slot.skill_pressed.connect(func(idx: int) -> void: skill_pressed.emit(idx))
 		row.add_child(slot)
 		_slots.append(slot)
+	_refresh_profile()
+
+
+func bind_profile(profile: PlayerProfile) -> void:
+	if _profile != null and _profile.changed.is_connected(_on_profile_changed):
+		_profile.changed.disconnect(_on_profile_changed)
+	_profile = profile
+	_profile.changed.connect(_on_profile_changed)
+	_refresh_profile()
+
+
+func _on_profile_changed(domain: StringName, change_kind: StringName) -> void:
+	if domain == &"hero" and (change_kind == &"loadout" or change_kind == &"restored"):
+		_refresh_profile()
+
+
+func _refresh_profile() -> void:
+	if _profile == null or not is_node_ready() or _slots.is_empty():
+		return
+	var loadout: Array = _profile.combat_snapshot()["loadout"]
+	for i in range(_slots.size()):
+		var skill: Dictionary = loadout[i] if i < loadout.size() else {}
+		_slots[i].rune_id = skill.get("icon", &"")
+		_slots[i].is_locked = false
+		_slots[i].level_required = 0
 
 
 func set_auto(active: bool) -> void:

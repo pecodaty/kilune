@@ -40,6 +40,7 @@ var _selected_outfit: StringName
 var _gacha_kind: StringName = &"skill"
 var _countdown := 4835.0
 var _clock_label: Label
+var _wallet_state: WalletState
 
 
 func _ready() -> void:
@@ -50,6 +51,18 @@ func _ready() -> void:
 
 func open() -> void:
 	_active_tab = &"supply"
+	_rebuild()
+
+
+func bind_wallet_state(wallet_state: WalletState) -> void:
+	if _wallet_state != null and _wallet_state.changed.is_connected(_on_wallet_changed):
+		_wallet_state.changed.disconnect(_on_wallet_changed)
+	_wallet_state = wallet_state
+	_wallet_state.changed.connect(_on_wallet_changed)
+	_rebuild()
+
+
+func _on_wallet_changed(_change_kind: StringName) -> void:
 	_rebuild()
 
 
@@ -86,8 +99,20 @@ func _build_header() -> void:
 		if tab["id"] == _active_tab: title_text = tab["title"]
 	var title := _label(title_text, true, 15, UIPalette.GOLD)
 	title.position = Vector2(14, 13); title.size = Vector2(maxf(120, size.x - 152), 30); add_child(title)
-	_add_currency(Vector2(size.x - 138, 17), Vector2(66, 24), &"gem", "26,791", Color("#55C8FF"))
-	_add_currency(Vector2(size.x - 68, 17), Vector2(64, 24), &"coin", "11,734", Color("#FFAA33"))
+	var gems := _wallet_state.balance(&"gems") if _wallet_state != null else 0
+	var gold := _wallet_state.balance(&"gold") if _wallet_state != null else 0
+	_add_currency(Vector2(size.x - 138, 17), Vector2(66, 24), &"gem", _format_amount(gems), Color("#55C8FF"))
+	_add_currency(Vector2(size.x - 68, 17), Vector2(64, 24), &"coin", _format_amount(gold), Color("#FFAA33"))
+
+
+func _format_amount(amount: int) -> String:
+	var digits := str(amount)
+	var out := ""
+	for i in range(digits.length()):
+		if i > 0 and (digits.length() - i) % 3 == 0:
+			out += ","
+		out += digits[i]
+	return out
 
 
 func _add_currency(at: Vector2, currency_size: Vector2, icon_id: StringName, value: String, color: Color) -> void:

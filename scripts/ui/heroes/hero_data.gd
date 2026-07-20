@@ -58,10 +58,10 @@ static func skill_sections() -> Dictionary:
 
 static func active_skills() -> Array[Dictionary]:
 	return [
-		_skill(&"thorn_orb","Thorn Orb",&"leaf",&"path1",5,0), _skill(&"vine_web","Vine Web",&"globe",&"path1",3,0),
-		_skill(&"canopy_wave","Canopy Wave",&"wave",&"path1",2,0), _skill(&"send_companion","Send Companion",&"paw",&"path1",0,0),
-		_skill(&"dew_restore","Dew Restore",&"drop",&"spec1",3,1), _skill(&"spirit_link","Spirit Link",&"orb",&"spec1",1,0),
-		_skill(&"sanctuary_bloom","Sanctuary Bloom",&"flower",&"spec1",0,0), _skill(&"guiding_light","Guiding Light",&"star",&"spec1",0,0),
+		_progression_skill(&"thorn_orb",5,0), _progression_skill(&"vine_web",3,0),
+		_progression_skill(&"canopy_wave",2,0), _progression_skill(&"send_companion",0,0),
+		_progression_skill(&"dew_restore",3,1), _progression_skill(&"spirit_link",1,0),
+		_progression_skill(&"sanctuary_bloom",0,0), _progression_skill(&"guiding_light",0,0),
 	]
 
 
@@ -73,8 +73,8 @@ static func skill_level_requirement(level: int) -> int:
 	return 90 if level > 10 else TraitRules.skill_level_requirement(level)
 
 
-static func _skill(id: StringName, name: String, icon: StringName, section: StringName, level: int, mastery: int) -> Dictionary:
-	return {"id":id, "name":name, "icon":icon, "section":section, "level":level, "mastery":mastery}
+static func _progression_skill(id: StringName, level: int, mastery: int) -> Dictionary:
+	return GameCatalog.skill(id).progression_snapshot(level, mastery)
 
 
 static func talent_sections() -> Dictionary:
@@ -157,54 +157,11 @@ static func gear_slots() -> Array[Dictionary]:
 
 
 static func inventory() -> Array[Dictionary]:
-	return [
-		{
-			"id": &"trailguard", "name": "Trailguard Armor", "slot": &"armor",
-			"lv": 3, "rarity": &"rare", "icon": &"shield",
-			"stats": [["Max HP", "+22"], ["Defense", "+2"]], "modifiers": {&"max_hp":22.0, &"defense":2.0},
-			"enhance": "+0/12", "success": "100%",
-			"locked": [["+3", "4 Common or Rare"], ["+6", "3 Rare"], ["+9", "2 Epic"], ["+12", "1 Legendary"]],
-			"actions": ["Enhance +1", "Arcane Dust ×1", "Refine"],
-			"desc": "Enchanted trailguard armor forged for heroes of the Shroomer realm.",
-		},
-		{
-			"id": &"sunstep", "name": "Sunstep Shoes", "slot": &"shoes",
-			"lv": 2, "rarity": &"uncommon", "icon": &"boot",
-			"stats": [["Move Speed", "+8%"]], "modifiers": {&"move_speed":8.0},
-			"enhance": "+0/10", "success": "100%",
-			"locked": [["+3", "3 Common"], ["+6", "2 Uncommon"], ["+9", "1 Rare"]],
-			"actions": ["Enhance +1", "Solar Dust ×1", "Refine"],
-			"desc": "Feather-light shoes imbued with solar energy for swift movement.",
-		},
-		{
-			"id": &"ember_signet", "name": "Ember Signet", "slot": &"ring",
-			"lv": 1, "rarity": &"rare", "icon": &"ring",
-			"stats": [["Power", "+15"], ["Critical Chance", "+3%"]], "modifiers": {&"power":15.0, &"critical_chance":3.0},
-			"enhance": "+0/12", "success": "100%",
-			"locked": [["+3", "4 Common or Rare"], ["+6", "3 Rare"], ["+9", "2 Epic"], ["+12", "1 Legendary"]],
-			"actions": ["Enhance +1", "Arcane Dust ×1", "Refine"],
-			"desc": "A ring set with an ember crystal that pulses with inner flame.",
-		},
-		{
-			"id": &"bulwark_band", "name": "Bulwark Band", "slot": &"accessory",
-			"lv": 1, "rarity": &"common", "icon": &"band",
-			"stats": [["Defense", "+5"], ["Max HP", "+10"]], "modifiers": {&"defense":5.0, &"max_hp":10.0},
-			"enhance": "+0/8", "success": "100%",
-			"locked": [["+3", "3 Common"], ["+6", "2 Uncommon"]],
-			"actions": ["Enhance +1", "Stone Dust ×1", "Refine"],
-			"desc": "A simple band that offers a modest protective barrier.",
-		},
-		{
-			"id": &"oracle_signet", "name": "Oracle Signet", "slot": &"ring",
-			"lv": 4, "rarity": &"epic", "icon": &"ring",
-			"stats": [["Skill Power", "+12"], ["Healing Power", "+6%"]], "modifiers": {&"skill_power":12.0, &"healing_power":6.0},
-			"enhance": "+0/12", "success": "100%",
-			"locked": [["+3", "4 Rare"], ["+6", "3 Epic"]],
-			"actions": [],
-			"desc": "A lucid crystal signet aligned with Oracle foresight and restorative flow.",
-		},
-	]
+	var out: Array[Dictionary] = []
+	for definition in GameCatalog.equipment_definitions():
+		out.append(definition.snapshot(1, false))
+	return out
 
 
 static func initial_equipment() -> Dictionary:
-	return {&"armor":&"trailguard", &"shoes":&"sunstep", &"ring":&"ember_signet", &"accessory":&"bulwark_band"}
+	return GameCatalog.initial_equipment()

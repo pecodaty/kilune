@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://tas501vbbh6h"]
+[gd_scene load_steps=18 format=3 uid="uid://tas501vbbh6h"]
 
 [ext_resource type="Script" uid="uid://co0022jumbonb" path="res://scripts/ui/gameplay/main_gameplay_interface.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/ui/gameplay/top_hud.tscn" id="2"]
@@ -16,6 +16,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/gameplay/floating_right_menu.tscn" id="14"]
 [ext_resource type="PackedScene" path="res://scenes/ui/gameplay/backpack_screen.tscn" id="15"]
 [ext_resource type="PackedScene" path="res://scenes/ui/mailbox/mailbox_screen.tscn" id="16"]
+[ext_resource type="PackedScene" path="res://scenes/runtime/game_session.tscn" id="17"]
 
 [node name="MainGameplayInterface" type="Control" unique_id=2073846664]
 layout_mode = 3
@@ -23,6 +24,8 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 script = ExtResource("1")
+
+[node name="GameSession" parent="." instance=ExtResource("17")]
 
 [node name="SafeAreaContainer" type="MarginContainer" parent="." unique_id=940804327]
 layout_mode = 0

@@ -1,7 +1,7 @@
 class_name HeroProgressionState
 extends RefCounted
-## Heroes-owned, session-local progression model. Snapshots are deep copies so
-## UI tabs cannot mutate state without passing validation here.
+## Hero-specific progression composed into PlayerProfile. Inventory/equipment
+## ownership is delegated to the profile's shared InventoryState.
 
 signal changed(change_kind: StringName)
 
@@ -45,19 +45,19 @@ var _identity: Dictionary = HeroData.hero()
 var _skills: Array[Dictionary] = []
 var _loadout: Array[StringName] = []
 var _talents: Array[Dictionary] = []
-var _inventory: Array[Dictionary] = []
-var _equipment: Dictionary = {}
+var _inventory_state: InventoryState
 
 
-func _init() -> void:
+func _init(inventory_state: InventoryState = null, data: Dictionary = {}) -> void:
+	_inventory_state = inventory_state if inventory_state != null else InventoryState.new()
+	_inventory_state.changed.connect(_on_inventory_changed)
 	for skill in HeroData.active_skills():
 		_skills.append(skill.duplicate(true))
 	_loadout = HeroData.equipped_skills().duplicate()
 	for talent in HeroData.constellation_talents():
 		_talents.append(talent.duplicate(true))
-	for item in HeroData.inventory():
-		_inventory.append(item.duplicate(true))
-	_equipment = HeroData.initial_equipment().duplicate(true)
+	if not data.is_empty():
+		restore(data, false)
 
 
 func identity_snapshot() -> Dictionary:
@@ -77,11 +77,11 @@ func talents_snapshot() -> Array[Dictionary]:
 
 
 func inventory_snapshot() -> Array[Dictionary]:
-	return _inventory.duplicate(true)
+	return _inventory_state.equipment_items_snapshot()
 
 
 func equipped_snapshot() -> Dictionary:
-	return _equipment.duplicate(true)
+	return _inventory_state.equipment_snapshot()
 
 
 func skill_points_spent() -> int:
@@ -98,101 +98,81 @@ func talent_points_spent() -> int:
 	return total
 
 
-func upgrade_skill(skill_id: StringName) -> bool:
+func upgrade_skill(skill_id: StringName) -> StateMutationResult:
 	var skill := _find(_skills, skill_id)
 	if skill.is_empty() or not TraitRules.can_upgrade_skill(skill, skill_points_spent(), int(_identity["level"])):
-		return false
+		return StateMutationResult.rejected(&"skill_upgrade_blocked", "Skill cannot be upgraded.")
 	skill["level"] += 1
 	changed.emit(&"skills")
-	return true
+	return StateMutationResult.accepted(&"skills", &"skill_upgraded")
 
 
-func upgrade_mastery(skill_id: StringName) -> bool:
+func upgrade_mastery(skill_id: StringName) -> StateMutationResult:
 	var skill := _find(_skills, skill_id)
 	if skill.is_empty() or not TraitRules.can_upgrade_mastery(skill, skill_points_spent(), int(_identity["level"])):
-		return false
+		return StateMutationResult.rejected(&"mastery_upgrade_blocked", "Mastery cannot be upgraded.")
 	skill["mastery"] += 1
 	changed.emit(&"skills")
-	return true
+	return StateMutationResult.accepted(&"skills", &"mastery_upgraded")
 
 
-func set_loadout_slot(slot_index: int, skill_id: StringName) -> bool:
+func set_loadout_slot(slot_index: int, skill_id: StringName) -> StateMutationResult:
 	if slot_index < 0 or slot_index >= _loadout.size():
-		return false
+		return StateMutationResult.rejected(&"invalid_slot", "Invalid loadout slot.")
 	if not skill_id.is_empty():
 		var skill := _find(_skills, skill_id)
 		if skill.is_empty() or int(skill["level"]) <= 0 or _loadout.has(skill_id):
-			return false
+			return StateMutationResult.rejected(&"invalid_skill", "Skill is unavailable or already equipped.")
 	_loadout[slot_index] = skill_id
 	changed.emit(&"loadout")
-	return true
+	return StateMutationResult.accepted(&"loadout")
 
 
-func toggle_skill_loadout(skill_id: StringName) -> bool:
+func toggle_skill_loadout(skill_id: StringName) -> StateMutationResult:
 	var occupied := _loadout.find(skill_id)
 	if occupied >= 0:
 		return set_loadout_slot(occupied, &"")
 	var empty := _loadout.find(&"")
-	return empty >= 0 and set_loadout_slot(empty, skill_id)
+	if empty < 0:
+		return StateMutationResult.rejected(&"loadout_full", "No empty loadout slot.")
+	return set_loadout_slot(empty, skill_id)
 
 
-func set_talent_rank(talent_id: StringName, rank: int) -> bool:
+func set_talent_rank(talent_id: StringName, rank: int) -> StateMutationResult:
 	var talent := _find(_talents, talent_id)
 	if talent.is_empty() or abs(rank - int(talent["rank"])) != 1:
-		return false
+		return StateMutationResult.rejected(&"invalid_rank_change", "Talent ranks change one point at a time.")
 	var level := int(_identity["level"])
 	var section: Dictionary = HeroData.talent_sections()[talent["section"]]
 	if rank > int(talent["rank"]):
 		if not bool(section["chosen"]) or not TraitRules.can_increase_talent(talent, _talents, level, int(section["unlock"])):
-			return false
+			return StateMutationResult.rejected(&"talent_upgrade_blocked", "Talent requirements are not met.")
 	else:
 		if not TraitRules.can_refund_talent(talent_id, _talents, level, _section_unlocks()):
-			return false
+			return StateMutationResult.rejected(&"talent_refund_blocked", "Another learned talent depends on this rank.")
 	talent["rank"] = rank
 	changed.emit(&"talents")
-	return true
+	return StateMutationResult.accepted(&"talents", &"talent_rank_changed")
 
 
-func equip_item(item_id: StringName) -> bool:
-	var item := _find(_inventory, item_id)
-	if item.is_empty():
-		return false
-	var slot: StringName = item["slot"]
-	if _equipment.get(slot, &"") == item_id:
-		return false
-	_equipment[slot] = item_id
-	changed.emit(&"equipment")
-	return true
+func equip_item(item_id: StringName) -> StateMutationResult:
+	return _inventory_state.equip_item(item_id)
 
 
-func unequip_item(item_id: StringName) -> bool:
-	var item := _find(_inventory, item_id)
-	if item.is_empty():
-		return false
-	var slot: StringName = item["slot"]
-	if _equipment.get(slot, &"") != item_id:
-		return false
-	_equipment.erase(slot)
-	changed.emit(&"equipment")
-	return true
+func unequip_item(item_id: StringName) -> StateMutationResult:
+	return _inventory_state.unequip_item(item_id)
 
 
 func item_snapshot(item_id: StringName) -> Dictionary:
-	return _find(_inventory, item_id).duplicate(true)
+	return _inventory_state.item_snapshot(item_id)
 
 
 func equipped_item_in(slot_id: StringName) -> Dictionary:
-	return item_snapshot(_equipment.get(slot_id, &""))
+	return _inventory_state.equipped_item_in(slot_id)
 
 
 func item_action(item_id: StringName) -> StringName:
-	var item := _find(_inventory, item_id)
-	if item.is_empty():
-		return &""
-	var equipped_id: StringName = _equipment.get(item["slot"], &"")
-	if equipped_id == item_id:
-		return &"unequip"
-	return &"replace" if not equipped_id.is_empty() else &"equip"
+	return _inventory_state.item_action(item_id)
 
 
 func stats_snapshot() -> Array[Dictionary]:
@@ -207,7 +187,6 @@ func stats_snapshot() -> Array[Dictionary]:
 		out.append({
 			"id":stat_id, "label":definition["label"], "group":definition["group"],
 			"base":base, "equipment":equipment, "talent":talent,
-			"talent_percent":talent_percent.get(stat_id, 0.0),
 			"final":base + equipment + talent, "percent":definition["percent"],
 		})
 	return out
@@ -215,11 +194,50 @@ func stats_snapshot() -> Array[Dictionary]:
 
 func _equipment_modifiers() -> Dictionary:
 	var totals := {}
-	for item_id in _equipment.values():
-		var item := _find(_inventory, item_id)
+	for item_id in _inventory_state.equipment_snapshot().values():
+		var item := _inventory_state.item_snapshot(item_id)
 		for stat_id in item.get("modifiers", {}):
 			totals[stat_id] = totals.get(stat_id, 0.0) + float(item["modifiers"][stat_id])
 	return totals
+
+
+func to_dict() -> Dictionary:
+	var skill_ranks := {}
+	for skill in _skills:
+		skill_ranks[skill["id"]] = {"level":skill["level"], "mastery":skill["mastery"]}
+	var talent_ranks := {}
+	for talent in _talents:
+		talent_ranks[talent["id"]] = talent["rank"]
+	return {"skills":skill_ranks, "loadout":_loadout.duplicate(), "talents":talent_ranks}
+
+
+func restore(data: Dictionary, emit_change := true) -> StateMutationResult:
+	var skill_ranks: Dictionary = data.get("skills", {})
+	for skill in _skills:
+		var saved: Dictionary = skill_ranks.get(skill["id"], {})
+		if not saved.is_empty():
+			skill["level"] = clampi(int(saved.get("level", skill["level"])), 0, TraitRules.MAX_SKILL_LEVEL)
+			skill["mastery"] = clampi(int(saved.get("mastery", skill["mastery"])), 0, TraitRules.MAX_SKILL_MASTERY)
+	var loadout_data: Array = data.get("loadout", _loadout)
+	var restored_loadout: Array[StringName] = []
+	for raw_id in loadout_data.slice(0, 6):
+		var id := StringName(raw_id)
+		restored_loadout.append(id if id.is_empty() or not _find(_skills, id).is_empty() else &"")
+	while restored_loadout.size() < 6:
+		restored_loadout.append(&"")
+	_loadout = restored_loadout
+	var talent_ranks: Dictionary = data.get("talents", {})
+	for talent in _talents:
+		if talent_ranks.has(talent["id"]):
+			talent["rank"] = clampi(int(talent_ranks[talent["id"]]), 0, int(talent["max"]))
+	if emit_change:
+		changed.emit(&"restored")
+	return StateMutationResult.accepted(&"restored")
+
+
+func _on_inventory_changed(change_kind: StringName) -> void:
+	if change_kind == &"equipment" or change_kind == &"restored" or change_kind == &"items":
+		changed.emit(&"equipment")
 
 
 func _talent_modifiers() -> Dictionary:

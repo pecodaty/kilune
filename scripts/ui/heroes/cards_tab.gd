@@ -63,16 +63,39 @@ class CardCell extends Control:
 
 
 var _cards: Array[CardCell] = []
+var _inventory_state: InventoryState
 
 
 func _build() -> void:
 	panel.setup("EQUIPMENT CARDS")
+	_populate()
+
+
+func bind_inventory_state(inventory_state: InventoryState) -> void:
+	if _inventory_state != null and _inventory_state.changed.is_connected(_on_inventory_changed):
+		_inventory_state.changed.disconnect(_on_inventory_changed)
+	_inventory_state = inventory_state
+	_inventory_state.changed.connect(_on_inventory_changed)
+	_populate()
+
+
+func _on_inventory_changed(_change_kind: StringName) -> void:
+	_populate()
+
+
+func _populate() -> void:
+	if _inventory_state == null or panel == null:
+		return
+	for child in panel.body.get_children():
+		panel.body.remove_child(child)
+		child.queue_free()
+	_cards.clear()
 	var grid := GridContainer.new()
 	grid.columns = 3
 	grid.add_theme_constant_override("h_separation", 5)
 	grid.add_theme_constant_override("v_separation", 5)
 	grid.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	for item in HeroData.inventory():
+	for item in _inventory_state.equipment_items_snapshot():
 		var cell := CardCell.new()
 		cell.item = item
 		cell.selected = item["id"] == &"ember_signet" # Reference initial selection.
@@ -85,4 +108,4 @@ func _build() -> void:
 func _on_card_pressed(card: CardCell) -> void:
 	for cell in _cards:
 		cell.selected = cell == card
-	modal_requested.emit({"type": &"item", "data": card.item})
+	modal_requested.emit({"type":&"item", "data":card.item, "action":_inventory_state.item_action(card.item["id"])})

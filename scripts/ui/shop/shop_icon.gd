@@ -72,3 +72,5 @@ func _draw_glyph(rect: Rect2) -> void:
 			draw_circle(c+Vector2(-3,-2)*u,2*u,Color("#0A0612")); draw_circle(c+Vector2(3,-2)*u,2*u,Color("#0A0612"))
 		&"dragon":
 			draw_arc(c,8*u,-PI*0.7,PI*0.8,20,accent,4*u,true); draw_colored_polygon(PackedVector2Array([c+Vector2(3,-9)*u,c+Vector2(10,-5)*u,c+Vector2(4,-2)*u]),accent)
+		_:
+			IconDraw.draw_item_icon(self, icon_id, rect, accent)
